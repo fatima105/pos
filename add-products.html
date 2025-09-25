@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Product</title>
+    <link href="scripts/select2.min.css" rel="stylesheet" />
+    <!-- Bootstrap CSS -->
+   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div id="sidebar-container"></div>
+  
+        <!-- Content Area -->
+        <div class="content-container">
+          <div class="container-fluid bg-gray ">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4 class="mb-0">Add Product</h4>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                  <li class="breadcrumb-item">
+                    <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="products.html" class="text-primary text-decoration-none"
+                      >Product</a
+                    >
+                  </li>
+                  <li
+                    class="breadcrumb-item active text-muted"
+                    aria-current="page"
+                  >
+                    Add
+                  </li>
+                </ol>
+              </nav>
+            </div>
+  
+               <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+            <div style="margin-top:10px;" class="d-flex justify-content-center">
+              <div
+                class="card px-2 shadow-lg bg-white"
+                style="width: 80%; max-width: 500px"
+              >
+         
+                <form action="" id="ProductAdd">
+                  <div class="row g-3">
+  
+                    <!-- Parent Category -->
+                    <div class="col-sm-12">
+                      <label class="form-label fw-bold">Parent Category <span class="text-danger">*</span></label>
+                      <select id="category_id" class="form-select select2">
+                        <!-- Options will be populated by API -->
+                      </select>
+                    </div>
+  
+                    <!-- Sub Category -->
+                    <div class="col-sm-12">
+                      <label class="form-label fw-bold">Sub Category <span class="text-danger">*</span></label>
+                      <select id="sub_category_id" class="form-select">
+                        <!-- Options will be populated by API -->
+                      </select>
+                    </div>
+  
+                    <!-- Unit -->
+                    <div class="col-sm-12">
+                      <label class="form-label fw-bold">Unit <span class="text-danger">*</span></label>
+                      <select id="unit_id" class="form-select">
+                        <!-- Options will be populated by API -->
+                      </select>
+                    </div>
+  
+                    <!-- Product Name -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">Product Name <span class="text-danger">*</span></label>
+                      <input id="product_name" type="text" class="form-control" required />
+                    </div>
+  
+                
+  
+                    <!-- Retail Price -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">Retail Price <span class="text-danger">*</span></label>
+                      <input id="retail_price" type="text" class="form-control" required />
+                    </div>
+  
+                    <!-- Description -->
+                    <div class="col-md-12 col-sm-6">
+                      <label class="form-label fw-bold">Description <span class="text-danger">*</span></label>
+                      <textarea id="description" rows="4" class="form-control" required></textarea>
+                    </div>
+        <div class="col-md-12 col-sm-6">
+                      <label class="form-label fw-bold">SKU<span class="text-danger">*</span></label>
+                      <input id="SKU" name="SKU" value="" class="form-control" required>
+                    </div>
+  
+                    <!-- Tax Status -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">Tax Status <span class="text-danger">*</span></label>
+                      <select id="tax" class="form-select">
+                        <option>Inclusive</option>
+                        <option>Exclusive</option>
+                      </select>
+                    </div>
+  
+                    <!-- Product Status -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-bold">Product Status <span class="text-danger">*</span></label>
+                      <select id="status" class="form-select">
+                        <option>Active</option>
+                        <option>Block</option>
+                      </select>
+                    </div>
+  
+                    <!-- Submit Button -->
+                    <div class="col-md-12 col-sm-6">
+                      <button type="submit" class="btn btn-primary w-100">Submit</button>
+                    </div>
+  
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <!-- Footer -->
+          <div id="footer-container"></div>
+        </div>
+      </div>
+
+    <!-- Error Modal -->
+    <div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-danger" id="ErrorModalLabel">
+              <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+              Please check your errors
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Bootstrap JS -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+ <script src="scripts/bootstrap.bundle.min.js"></script> 
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="scripts/scripts.js"></script>
+
+ <script src="config.js"></script>
+<!-- Local Select2 JS -->
+<script src="scripts/select2.min.js"></script>
+<script>
+ document.getElementById('retail_price').addEventListener('input', function () {
+    // Remove everything except digits and a single decimal point
+    this.value = this.value
+      .replace(/[^0-9.]/g, '')        // Remove all except digits and dot
+      .replace(/(\..*)\./g, '$1');    // Allow only one dot
+  });
+  document.addEventListener('DOMContentLoaded', () => {
+    function renderAlertFromStorage() {
+  const alertPlaceholder = document.getElementById("alertPlaceholder");
+  const message = localStorage.getItem("globalAlertMessage");
+  const type = localStorage.getItem("globalAlertType") || "info";
+
+  if (message && alertPlaceholder) {
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    alertPlaceholder.innerHTML = alertHTML;
+    localStorage.removeItem("globalAlertMessage");
+    localStorage.removeItem("globalAlertType");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", renderAlertFromStorage);
+
+  // Initialize Select2 dropdowns first
+  $('#unit_id').select2({
+    placeholder: "Select Unit",
+    allowClear: true
+  });
+
+  $('#category_id').select2({
+    placeholder: "Select Category",
+    allowClear: true
+  });
+
+  $('#sub_category_id').select2({
+    placeholder: "Select Sub Category",
+    allowClear: true
+  });
+
+  // Fetch and populate categories
+  fetch(`${BASEURL}Category`)
+    .then(response => response.json())
+    .then(data => {
+      const select = document.getElementById('category_id');
+      select.innerHTML = '<option value="">Select Category</option>';
+
+      if (data.Category && data.Category.length > 0) {
+          data.Category
+           .filter(category => category.status === "Active") // ✅ Filter only active
+     
+      .forEach(category => {
+          const option = `<option value="${category.id}">${category.name}</option>`;
+          select.insertAdjacentHTML('beforeend', option);
+        });
+      } else {
+        select.innerHTML = '<option value="">No categories found</option>';
+      }
+
+      // Refresh Select2 after populating options
+      $('#category_id').trigger('change');
+    })
+    .catch(error => {
+      console.error('Error fetching category data:', error);
+      const select = document.getElementById('category_id');
+      select.innerHTML = '<option value="">Error loading categories</option>';
+      $('#category_id').trigger('change');
+    });
+
+  // FIXED: Use Select2's change event instead of native addEventListener
+  $('#category_id').on('change', function(e) {
+    console.log("Category changed, value:", $(this).val());
+    
+    const categoryId = $(this).val();
+    const subCategorySelect = document.getElementById('sub_category_id');
+
+    if (!categoryId) {
+      subCategorySelect.innerHTML = '<option value="">Select a valid category first</option>';
+      $('#sub_category_id').trigger('change');
+      return;
+    }
+
+    const subCategoryApiUrl = `${BASEURL}SubCategory/GetSub/${categoryId}`;
+    
+    fetch(subCategoryApiUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        const subCategories = data.SubCategory;
+        subCategorySelect.innerHTML = '<option value="">Select SubCategory</option>';
+
+        if (Array.isArray(subCategories) && subCategories.length > 0) {
+          subCategories
+               .filter(sub => sub.status === "Active") // ✅ Filter only active
+     .forEach(sub => {
+            const option = `<option value="${sub.id}">${sub.name}</option>`;
+            subCategorySelect.insertAdjacentHTML('beforeend', option);
+          });
+        } else {
+          subCategorySelect.innerHTML = '<option value="">No subcategories found</option>';
+        }
+
+        $('#sub_category_id').trigger('change');
+      })
+      .catch(error => {
+        console.error('Error fetching subcategory data:', error);
+        subCategorySelect.innerHTML = '<option value="">Error loading subcategories</option>';
+        $('#sub_category_id').trigger('change');
+      });
+  });
+
+  // Fetch units
+  fetch(`${BASEURL}Unit`)
+    .then(response => response.json())
+    .then(data => {
+      const select = document.getElementById('unit_id');
+      select.innerHTML = '<option value="">Select Unit</option>';
+
+      if (data.Unit && data.Unit.length > 0) {
+        data.Unit
+            .filter(unit => unit.status === "Active")
+            .forEach(unit => {
+          const option = `<option value="${unit.id}">${unit.name}</option>`;
+          select.insertAdjacentHTML('beforeend', option);
+        });
+      } else {
+        select.innerHTML = '<option value="">No units found</option>';
+      }
+
+      $('#unit_id').trigger('change');
+    })
+    .catch(error => {
+      console.error('Error fetching unit data:', error);
+    });
+
+  // Form submission
+  const productAddForm = document.getElementById('ProductAdd');
+  if (productAddForm) {
+    productAddForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const tax = document.getElementById('tax').value.trim();
+            const SKU = document.getElementById('SKU').value.trim();
+      const name = document.getElementById('product_name').value.trim();
+      const retail_price = document.getElementById('retail_price').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const status = document.getElementById('status').value;
+      
+      // Use Select2's val() method to get selected values
+      const category_id = $('#category_id').val();
+      const sub_category_id = $('#sub_category_id').val();
+      const Unit = $('#unit_id').val();
+
+      if (!name  || !retail_price || !description || !status || !category_id || !sub_category_id) {
+       
+      localStorage.setItem("globalAlertMessage", "❌ Please fill out all fields.");
+  localStorage.setItem("globalAlertType", "danger");
+        return;
+      }
+
+      const productData = {
+        name,
+        SKU,
+        retail_price,
+        description,
+        status,
+        tax,
+        category_id,
+        sub_category_id,
+        Unit
+      };
+
+      fetch(`${BASEURL}Product`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(productData)
+      })
+        .then((res) => res.json())
+   .then((data) => {
+  if (data.success) {
+  localStorage.setItem("globalAlertMessage", "✅ " + data.message + "\nSKU: " + data.data.SKU);
+  localStorage.setItem("globalAlertType", "success");
+    productAddForm.reset();
+
+    // Reset Select2 dropdowns
+    $('#category_id').val(null).trigger('change');
+    $('#sub_category_id').val(null).trigger('change');
+    $('#unit_id').val(null).trigger('change');
+
+    window.location.href = "products.html";
+  } else {
+    // Handle backend-provided error
+localStorage.setItem("globalAlertMessage", "❌ " + data.message + (data.errorCode ? ` (Code: ${data.errorCode})` : ""));
+localStorage.setItem("globalAlertType", "danger");
+
+renderAlertFromStorage(); // show it immediately without reload
+
+    console.warn("API Error Response:", data);
+  }
+})
+.catch((err) => {
+  console.error("Network or unexpected error:", err);
+localStorage.setItem("globalAlertMessage", "❌ Network or server error occurred while adding the product.");
+localStorage.setItem("globalAlertType", "danger");
+});
+
+    });
+  }
+});
+</script>
+
+
+  </body>
+</html>

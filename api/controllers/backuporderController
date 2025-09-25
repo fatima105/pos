@@ -1,0 +1,418 @@
+const db = require('../db');
+
+exports.addOrders = (req, res) => {
+  const {
+    user_id,
+    location_id,
+    product_id,
+    purchase_id,
+    sale_id,
+    sale_detail_id,
+    retail,
+    quantity,
+    tax_type,
+    tax,
+    discount,
+    net_amount
+  } = req.body;
+
+  const created_at = new Date().toISOString();
+const today = new Date();
+const currentDate = today.toISOString().slice(0, 10);
+
+console.log(currentDate);
+      const insertQuery = `
+        INSERT INTO orders (
+          user_id,
+          location_id,
+          product_id,
+          purchase_id,
+          sale_id,
+          sale_detail_id,
+          retail,
+          quantity,
+          tax_type,
+          tax,
+          discount,
+          net_amount,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const params = [
+        user_id,
+        location_id,
+        product_id,
+        purchase_id,
+        sale_id,
+        sale_detail_id,
+        retail,
+        quantity,
+        tax_type,
+        tax,
+        discount,
+        net_amount,
+        created_at
+      ];
+
+      db.run(insertQuery, params, function (err) {
+        if (err) {
+          return res.status(400).json({ error: err.message });
+        }
+        res.status(201).json({ id: this.lastID, message: 'Order Successfully Created' });
+      });
+ 
+    }
+
+exports.checkStock = (req, res) => {
+  const { product_id, quantity } = req.body;
+
+  const checkQuery = `SELECT SUM(quantity) AS total FROM purchase_stocks WHERE product_id = ?`;
+  db.get(checkQuery, [product_id], (err, row) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    const availableStock = row.total || 0;
+
+    if (availableStock >= quantity) {
+      res.status(200).json({ status: true, available: availableStock });
+    } else {
+      res.status(200).json({ status: false, available: availableStock, message: "Product out of stock" });
+    }
+  });
+};
+
+exports.AddPurchaseStock = (req, res) => {
+  const { sessionId, products, user_id, customer, amount, paymentProfitAmount, paymentToInput } = req.body;
+console.log("Update",req.body);
+          console.log(amount);
+          console.log(sessionId);
+          console.log("paymenttoprofit",paymentProfitAmount);
+  const today = new Date();
+  const currentDate = today.toISOString().slice(0, 10);
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const year = today.getFullYear();
+
+  db.serialize(() => {
+    db.run("BEGIN TRANSACTION");
+
+    try {
+      // 1. Update draft order status
+      db.run(
+        `UPDATE draft_orders SET status = 'completed' WHERE order_session = ? AND status != 'completed'`,
+        [sessionId]
+      );
+
+      // 2. Insert Sale
+      const insertSaleSql = `
+        INSERT INTO sale (
+          customer_id, location_id, invoice_no, sale_date, amount,
+          discount, payment_status, user_id, fbr_invoice, deleted_at, created_at, updated_at
+        ) VALUES (?, 1, NULL, ?, ?, 0, 1, ?, 0, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `;
+
+      db.run(insertSaleSql, [customer, currentDate, amount, user_id], function (err) {
+        if (err) throw new Error("Insert Sale Failed: " + err.message);
+
+        const saleId = this.lastID;
+            // Example query for checking stock (corrected syntax)
+const stockSql = `
+  SELECT  SUM(quantity) as totalQty
+  FROM purchase_stocks
+  WHERE product_id = ?
+  GROUP BY purchase_detail_id
+`;
+
+console.log("🔍 Stock Check Query:", stockSql);
+console.log("📦 Product ID for Stock Check:", products[0]?.product_id);
+
+// Run the query
+db.all(stockSql, [products[0]?.product_id], (err, rows) => {
+  if (err) {
+    console.error("❌ Stock Query Failed:", err.message);
+  } else {
+    console.log("📊 Stock by Purchase Detail:");
+    rows.forEach(r => {
+      console.log(`\t${r.totalQty}`);
+    });
+  }
+});
+
+
+    // Run stock check query for first product
+    db.get(stockSql, [products[0]?.product_id], (err, row) => {
+      if (err) {
+        console.error("❌ Stock Query Failed:", err.message);
+      } else {
+        console.log("📊 Stock Query Result:", row);
+      }
+    });
+        const invoiceNo = `SV-${month}-${year}-${saleId}`;
+
+        // 3. Insert Transaction
+        const insertTransSql = `
+          INSERT INTO "transaction"(location_id, type, type_id, date, user_id, created_at, updated_at)
+          VALUES (1, 'Sale', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `;
+
+        db.run(insertTransSql, [saleId, currentDate, user_id], function (err) {
+          if (err) throw new Error("Insert Transaction Failed: " + err.message);
+
+          const transactionId = this.lastID;
+
+          // === ACCOUNTING ENTRIES ===
+          const amountInventory = amount - paymentProfitAmount;
+
+          // Inventory Cr
+          addTransactionDetail(transactionId, "Inventory", "Inventory Reduction", 0, amountInventory);
+
+          // Revenue Cr
+          addTransactionDetail(transactionId, "Revenue", "Revenue on Sale", 0, paymentProfitAmount);
+
+          if (Number(paymentToInput) === Number(amount)) {
+            // FULL CASH
+            addTransactionDetail(transactionId, "Cash In Hand", "Cash Sale", amount, 0);
+          } else if (Number(paymentToInput) === 0) {
+            // FULL CREDIT
+            addTransactionDetail(transactionId, customer, "Credit Sale", amount, 0, true);
+          } else {
+            // PARTIAL PAYMENT
+            addTransactionDetail(transactionId, "Cash In Hand", "Cash Received", paymentToInput, 0);
+            addTransactionDetail(transactionId, customer, "Receivable Balance",amount - paymentToInput, 0, true);
+          }
+
+          // 4. Update Sale Invoice No
+          db.run("UPDATE sale SET invoice_no=? WHERE id=?", [invoiceNo, saleId]);
+
+          // 5. Insert Sale Details + Stock
+          insertSaleDetailAndStock(saleId, products, user_id)
+            .then((stockIds) => {
+              db.run("COMMIT");
+              return res.status(201).json({
+                message: "Sale Recorded Successfully",
+                saleId,
+                transactionId,
+                invoiceNo,
+                stockIds,
+              });
+            })
+            .catch((err) => {
+              db.run("ROLLBACK");
+              return res.status(500).json({ error: "Stock/Sale detail failed", details: err });
+            });
+        });
+      });
+    } catch (err) {
+      db.run("ROLLBACK");
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // === Helper Functions ===
+  function addTransactionDetail(transactionId, account, narration, debit, credit, isCustomer = false) {
+    let sql = `SELECT head_code FROM chart_of_accounts WHERE head_name=? LIMIT 1`;
+    let param = [account];
+    if (isCustomer) {
+      sql = `SELECT head_code FROM chart_of_accounts WHERE customer_id=? LIMIT 1`;
+      param = [account];
+    }
+
+    db.get(sql, param, (err, row) => {
+      if (err || !row) throw new Error("Head Code not found for " + account);
+      const values = [1, null, transactionId, row.head_code, narration, debit, credit];
+      db.run(
+        `INSERT INTO transaction_details(location_id, transaction_details, v_id, coa_id, narration, debit, credit)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        values
+      );
+    });
+  }
+
+  function insertSaleDetailAndStock(saleId, products, user_id) {
+    return Promise.all(
+      products.map((p) => {
+        return new Promise((resolve, reject) => {
+          const product_id = Number(p.product_id);
+          const qty = Number(p.quantity);
+          const price = Number(p.price);
+          const net = qty * price;
+
+          db.get(`SELECT category_id, sub_category_id FROM Product WHERE id=?`, [product_id], (err, row) => {
+            if (err || !row) return reject("Product not found");
+
+            db.run(
+              `INSERT INTO sale_details(sale_id, location_id, sub_category_id, category_id, product_id, retail, quantity, net_amount, created_at, updated_at)
+               VALUES (?, 1, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+              [saleId, row.sub_category_id, row.category_id, product_id, price, qty, net],
+              function (err2) {
+                if (err2) return reject(err2.message);
+
+                db.run(
+                  `INSERT INTO purchase_stocks(user_id, location_id, sale_id, product_id, quantity, process, created_at, updated_at)
+                   VALUES (?, 1, ?, ?, ?, 'sale', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+                  [user_id, saleId, product_id, -qty],
+                  function (err3) {
+                    if (err3) return reject(err3.message);
+                    resolve(this.lastID);
+                  }
+                );
+              }
+            );
+          });
+        });
+      })
+    );
+  }
+};
+
+exports.Delete = (req, res) => {
+  const session = req.body.order_session;
+
+  if (!session) {
+    return res.status(400).json({ success: false, message: "order_session is required" });
+  }
+
+  const sql = `DELETE FROM draft_orders WHERE order_session = ?`;
+  db.run(sql, [session], function (err) {
+    if (err) {
+      console.error("❌ DB error:", err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+
+    res.json({
+      success: true,
+      message: `Deleted ${this.changes} draft(s) with session: ${session}`
+    });
+  });
+};
+exports.DeleteAll = (req, res) => {
+  const sql = `DELETE FROM draft_orders`;
+
+  db.run(sql, function (err) {
+    if (err) {
+      console.error("❌ DB error:", err.message);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+
+    res.json({
+      success: true,
+      message: `All draft orders deleted successfully.`,
+      deletedRows: this.changes // shows how many rows were deleted
+    });
+  });
+};
+
+exports.insertDraftOrders = (req, res) => {
+  const { user_id, location_id, products, status,draft_name } = req.body;
+  console.log("hi"+draft_name);
+  const created_at = new Date().toISOString();
+
+  if (!Array.isArray(products) || products.length === 0) {
+    return res.status(400).json({ error: "Products must be a non-empty array." });
+  }
+
+  const order_session = `${Date.now()}`; // to group all products together
+  const insertQuery = `
+    INSERT INTO draft_orders (
+      order_session,
+      user_id,
+      location_id,
+      product_id,
+      unit_name,
+      quantity,
+      retail,
+      discount,
+      status,
+      created_at,
+      draft_name
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+  `;
+
+  const stmt = db.prepare(insertQuery);
+
+  try {
+    for (const product of products) {
+      stmt.run(
+        order_session,
+        user_id,
+        location_id,
+        product.product_id,
+        product.unit_name || 'N/A',
+        product.quantity,
+        product.retail,
+        product.discount,
+        status || 'draft',
+        created_at,
+        draft_name
+      );
+    }
+
+    stmt.finalize((err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ message: 'Draft orders inserted successfully.' });
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+exports.GetAllDrafts = (req, res) => { 
+  const selectQuery = `
+    SELECT draft_orders.*, Product.name AS product_name 
+    FROM draft_orders
+    INNER JOIN Product ON draft_orders.product_id = Product.id
+    WHERE draft_orders.status = 'draft'
+  `;
+
+  db.all(selectQuery, [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    return res.status(200).json({ drafts: rows });
+  });
+};
+exports.GetOneDraftsBySession = (req, res) => {
+  const { order_session } = req.body; // or req.query if using GET
+
+  const selectQuery = `
+    SELECT draft_orders.*, Product.name AS product_name 
+    FROM draft_orders
+    INNER JOIN Product ON draft_orders.product_id = Product.id
+    WHERE draft_orders.order_session = ?
+  `;
+
+  db.all(selectQuery, [order_session], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    return res.status(200).json({ drafts: rows });
+  });
+};
+
+
+
+
+exports.UpdateDraft = (req, res) => {
+  const { order_session } = req.body;
+
+  if (!order_session) {
+    return res.status(400).json({ error: "order_session is required." });
+  }
+
+  const updateQuery = `
+    UPDATE draft_orders 
+    SET status = 'completed'
+    WHERE order_session = ?
+  `;
+
+  db.run(updateQuery, [order_session], function (err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    // 'this.changes' gives number of rows affected
+    return res.status(200).json({ message: "Draft updated successfully", affectedRows: this.changes });
+  });
+};
+

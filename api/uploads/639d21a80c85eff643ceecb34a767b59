@@ -1,0 +1,50 @@
+MAIN_CATEGORY,SUB_CATEGORY,Unit,PRODUCT_NAME,QUANTITY,SALE_PRICE,"TAX (0=Inclusive, 1= Exclusive)",SKU,SUPPLIER,SUPPLIER CONTACT,COST_PRICE,Pending Amount,Paid Amount
+Drinks,Drinks,Pieces,Dew Mountain 1.5L test nasrullah,12,180,0,8.964E+12,Borkhan Trader Chk,3153333032,160,1920,0
+Drinks,Drinks,Pieces,7up 1.5L kdkdkdkdk,12,180,0,12000800337,Borkhan Trader Chk,3153333032,160,1920,0
+Drinks,Drinks,Pieces,Pepsi 1.5L test nasrullah,12,180,0,12000800085,Borkhan Trader Chk,3153333032,160,1920,0
+Drinks,Drinks,Pieces,Mirinda 1.5L,12,180,0,12000800184,Borkhan Trader Chk,3153333032,160,1920,0
+Drinks,Drinks,Pieces,Dew M Jumbo 2.5L,12,250,0,8.964E+12,Borkhan Trader Chk,3153333032,215,2580,0
+Drinks,Drinks,Pieces,Pepsi 2.5L,12,250,0,12000004070,Borkhan Trader Chk,3153333032,215,2580,0
+Drinks,Drinks,Pieces,Dew Mountain 1 Ltr,18,150,0,8.964E+12,Borkhan Trader Chk,3153333032,136.66,2459.88,0
+Drinks,Drinks,Pieces,Pepsi I Ltr,18,150,0,12000002946,Borkhan Trader Chk,3153333032,136.66,2459.88,0
+Drinks,Drinks,Pieces,7up 1 Ltr,18,150,0,8.964E+12,Borkhan Trader Chk,3153333032,136.66,2459.88,0
+Drinks,Drinks,Pieces,Bigg Apple 1 Ltr,12,100,0,1.86007E+12,Borkhan Trader Chk,3153333032,86.66,1039.92,0
+Drinks,Drinks,Pieces,Bigg Lychee 1 Ltr,12,100,0,1.86007E+12,Borkhan Trader Chk,3153333032,86.66,1039.92,0
+Drinks,Drinks,Pieces,Bigg Apple 1.5 Ltr,12,150,0,1.86007E+12,Borkhan Trader Chk,3153333032,136.66,1639.92,0
+Drinks,Drinks,Pieces,Bigg Lychee 1.5 Ltr,12,150,0,1.86007E+12,Borkhan Trader Chk,3153333032,136.66,1639.92,0
+Drinks,Drinks,Pieces,Sting 500ml,60,120,0,8.964E+12,Borkhan Trader Chk,3153333032,95.83,5749.8,0
+Drinks,Drinks,Pieces,Sting 300ml,60,80,0,8.964E+12,Borkhan Trader Chk,3153333032,68.33,4099.8,0
+Drinks,Drinks,Pieces,Mirinda 345ml,24,70,0,8.964E+12,Borkhan Trader Chk,3153333032,58.33,1399.92,0
+Drinks,Drinks,Pieces,Pepsi 345ml,24,70,0,8.964E+12,Borkhan Trader Chk,3153333032,58.33,1399.92,0
+Drinks,Drinks,Pieces,7up 345ml,24,70,0,8.964E+12,Borkhan Trader Chk,3153333032,58.33,1399.92,0
+Drinks,Drinks,Pieces,Blitz 300ml,36,50,0,1.86007E+12,Borkhan Trader Chk,3153333032,40,1440,0
+Drinks,Drinks,Pieces,Tops Mango 1 Ltr frootopia,6,180,0,1.8602E+12,Borkhan Trader Chk,3153333032,153.33,919.98,0
+Drinks,Drinks,Pieces,Tops Annar 1 Ltr frootopia,6,180,0,2.0211E+12,Borkhan Trader Chk,3153333032,153.33,919.98,0
+Drinks,Drinks,Pieces,Bigg Apple 300ml,24,50,0,1.86007E+12,Borkhan Trader Chk,3153333032,41.66,999.84,0
+Drinks,Drinks,Pieces,Bigg Lychee 300ml,36,50,0,1.86007E+12,Borkhan Trader Chk,3153333032,41.66,1499.76,0
+Drinks,Drinks,Pieces,Water Murree spark 500ml,60,50,0,1.8602E+12,Borkhan Trader Chk,3153333032,33.33,1999.8,0
+Drinks,Drinks,Pieces,Water Aquafina 1.5 Ltr,30,90,0,12000002090,Borkhan Trader Chk,3153333032,75,2250,0
+Drinks,Drinks,Pieces,Yamoo Almond Juice 180ml,60,60,0,8.964E+12,Borkhan Trader Chk,3153333032,38.33,2299.8,0
+Drinks,Drinks,Pieces,Sting Can 250ml,36,100,0,12000034220,Borkhan Trader Chk,3153333032,79.16,2849.76,0
+Drinks,Drinks,Pieces,Tops Annar 250ml frootiapia,12,70,0,1.8602E+12,Borkhan Trader Chk,3153333032,51.66,619.92,0
+Drinks,Drinks,Pieces,Tops Peach 250ml frootiapia,12,70,0,1.8602E+12,Borkhan Trader Chk,3153333032,51.66,619.92,0
+Drinks,Drinks,Pieces,Dew Can 250ml,24,100,0,8.964E+12,Borkhan Trader Chk,3153333032,77.5,1860,0
+Drinks,Drinks,Pieces,7up Can 250ml,12,100,0,8.964E+12,Borkhan Trader Chk,3153333032,77.5,930,0
+Drinks,Drinks,Pieces,7up sugarfree Can 250ml,12,100,0,12000022784,Borkhan Trader Chk,3153333032,77.5,930,0
+Drinks,Drinks,Pieces,Pepsi Can 250ml,12,100,0,8.964E+12,Borkhan Trader Chk,3153333032,77.5,930,0
+Drinks,Drinks,Pieces,Tops Mango 250ml,24,50,0,1.8602E+12,Borkhan Trader Chk,3153333032,37.5,900,0
+Drinks,Drinks,Pieces,Tops Tangy Mango 250ml,24,50,0,2.0231E+12,Borkhan Trader Chk,3153333032,37.5,900,0
+Drinks,Drinks,Pieces,Tops Tangy Guava 250ml,24,50,0,2.0231E+12,Borkhan Trader Chk,3153333032,37.5,900,0
+Drinks,Drinks,Pieces,Tops Tangy Apple 250ml,24,50,0,2.02312E+12,Borkhan Trader Chk,3153333032,37.5,900,0
+Drinks,Drinks,Pieces,Tops Guava 250ml,24,50,0,1.8602E+12,Borkhan Trader Chk,3153333032,37.5,900,0
+Drinks,Drinks,Pieces,Klass Mango 125ml,72,20,0,9.176E+11,Borkhan Trader Chk,3153333032,14.58,1049.76,0
+Drinks,Drinks,Pieces,Tops PineApple Jar 250ml,12,90,0,2.02004E+12,Borkhan Trader Chk,3153333032,56.66,679.92,0
+Drinks,Drinks,Pieces,Tops Guava Jar 250ml,12,90,0,2.02004E+12,Borkhan Trader Chk,3153333032,56.66,679.92,0
+Drinks,Drinks,Pieces,Tops Red Grape Jar 250ml,12,90,0,2.02004E+12,Borkhan Trader Chk,3153333032,56.66,679.92,0
+Drinks,Drinks,Pieces,Tops Lychee Jar 250ml,12,90,0,2.02004E+12,Borkhan Trader Chk,3153333032,56.66,679.92,0
+Drinks,Drinks,Pieces,tops Mango Jar 250ml,12,90,0,2.02004E+12,Borkhan Trader Chk,3153333032,56.66,679.92,0
+Drinks,Drinks,Pieces,Peach Malt Jar 250ml,24,80,0,1.86024E+12,Borkhan Trader Chk,3153333032,62.5,1500,0
+Drinks,Drinks,Pieces,Slice Apple 200ml,72,50,0,8.964E+12,Borkhan Trader Chk,3153333032,40.83,2939.76,0
+Drinks,Drinks,Pieces,Slice Mango 200ml,72,50,0,8.964E+12,Borkhan Trader Chk,3153333032,40.83,2939.76,0
+Drinks,Drinks,Pieces,Frutaz Apple 1 Ltr,6,200,0,8.964E+12,Borkhan Trader Chk,3153333032,133.33,799.98,0
+Drinks,Drinks,Pieces,Frutaz Mango 1 Ltr,18,200,0,8.964E+12,Borkhan Trader Chk,3153333032,133.33,2399.94,0

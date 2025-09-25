@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales</title>
+
+  <!-- Bootstrap & DataTables CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/style.css" />
+
+  <style>
+    .bg-buttons {
+      background-color: #6c757d;
+      color: #e9ecef;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .bg-buttons .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+    }
+    @media (max-width: 768px) {
+      .d-flex.justify-content-end {
+        justify-content: center !important;
+        flex-direction: column;
+        align-items: center;
+      }
+      .d-flex.justify-content-end .btn {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <div id="sidebar-container"></div>
+
+    <div class="content-container">
+      <div class="container-fluid bg-white py-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+          <h2 class="mb-3 mb-md-0">Sales</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item"><a href="index.html" class="text-primary text-decoration-none">Home</a></li>
+              <li class="breadcrumb-item"><a href="view-sales.html" class="text-primary text-decoration-none">Sale</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Sale Details</li>
+            </ol>
+          </nav>
+        </div>
+
+        <!-- Sale Info -->
+        <div class="card mb-4 shadow-sm">
+          <div class="card-body">
+            <div class="row mb-2">
+              <div class="col-5 col-md-3 fw-bold">Voucher#:</div>
+              <div class="col-7 col-md-9" id="invoice_no"></div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-5 col-md-3 fw-bold">Date:</div>
+              <div class="col-7 col-md-9" id="curr_date"></div>
+            </div>
+            <div class="row mb-2">
+              <div class="col-5 col-md-3 fw-bold">Customer:</div>
+              <div class="col-7 col-md-9" id="customer_name"></div>
+            </div>
+            <div class="row">
+              <div class="col-5 col-md-3 fw-bold">Total Discount </div>
+              <div class="col-7 col-md-9" id="total_discount"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sales Table -->
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table id="saleTable" class="table table-striped table-bordered w-100">
+                <thead class="table-light">
+                  <tr>
+                    <th>Product</th>
+                    <th>Retail</th>
+                    <th>Quantity</th>
+                    <th>Discount</th>
+                    <th>Sub Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="saleTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="footer-container" class="mt-auto"></div>
+    </div>
+  </div>
+
+  <!-- JS Dependencies -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/jquery.dataTables.min.js"></script>
+  <script src="scripts/dataTables.buttons.min.js"></script>
+  <script src="scripts/jszip.min.js"></script>
+  <script src="scripts/pdfmake.min.js"></script>
+  <script src="scripts/vfs_fonts.js"></script>
+  <script src="scripts/buttons.html5.min.js"></script>
+  <script src="scripts/buttons.print.min.js"></script>
+  <script src="config.js"></script>
+
+  <!-- Logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      fetch("scripts/footer.html")
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById("footer-container").innerHTML = data;
+        });
+
+      fetch("sidebar.html")
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById("sidebar-container").innerHTML = data;
+        });
+
+      loadSaleDetails();
+    });
+
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    function loadSaleDetails() {
+      const saleId = getQueryParam('id');
+      if (!saleId) return console.error("No sale ID provided.");
+
+      fetch(`${BASEURL}Sale/SpecificDetails/${saleId}`)
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to fetch data.");
+          return response.json();
+        })
+        .then(data => {
+          const products = data.products;
+          if (!products || !products.length) return;
+
+          document.getElementById("invoice_no").textContent = data.invoice_no || '';
+          document.getElementById("curr_date").textContent = data.sale_date || '';
+          document.getElementById("customer_name").textContent = data.customer_name || '';
+          document.getElementById("total_discount").textContent = data.total_discount_from_table || '0.00';
+
+          let totalAdjusted = 0;
+          const tbody = document.getElementById("saleTableBody");
+          tbody.innerHTML = "";
+
+          products.forEach(item => {
+            totalAdjusted += parseFloat(item.adjusted_net_amount || 0);
+
+            tbody.innerHTML += `
+              <tr>
+                <td>${item.product_name}</td>
+                <td>${parseFloat(item.retail || 0).toFixed(2)}</td>
+                <td>${item.quantity}</td>
+                <td>${parseFloat(item.discount || 0).toFixed(2)}</td>
+                <td>${parseFloat(item.adjusted_net_amount || 0).toFixed(2)}</td>
+              </tr>
+            `;
+          });
+
+          // Add total row
+          tbody.innerHTML += `
+            <tr style="alig-item:'right'">
+              <td></td>
+                <td></td>
+                  <td></td>
+              <td class="text-end fw-bold">Total Adjusted:</td>
+              <td class="fw-bold">${totalAdjusted.toFixed(2)}</td>
+            </tr>
+          `;
+
+          $('#saleTable').DataTable({
+            responsive: true,
+            destroy: true,
+            dom: '<"d-flex justify-content-end mb-2 bg-buttons"B>frtip',
+            buttons: [
+              { extend: 'copy', className: 'btn btn-sm' },
+              { extend: 'csv', className: 'btn btn-sm' },
+              { extend: 'excel', className: 'btn btn-sm' },
+              { extend: 'pdf', className: 'btn btn-sm' },
+              { extend: 'print', className: 'btn btn-sm' }
+            ]
+          });
+        })
+        .catch(err => console.error("Fetch error:", err));
+    }
+  </script>
+</body>
+</html>

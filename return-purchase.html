@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Purchase Return</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/style.css" />
+
+  <style>
+    .bg-buttons {
+      background-color: #6c757d;
+      color: #e9ecef;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .bg-buttons .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .form-section {
+      padding: 30px;
+      background-color: white;
+      margin: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+
+<body class="bg-light">
+  <div class="main-container d-flex">
+    <div id="sidebar-container"></div>
+
+    <div class="content-container flex-grow-1">
+      <div class="container-fluid">
+        <div class="form-section">
+          <h4 class="mb-4">Add Purchase Return</h4>
+
+          <form id="purchaseReturnForm">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="supplierid" class="form-label">Supplier <span class="text-danger">*</span></label>
+                                <input type="hidden" class="form-control" id="supplier_id" placeholder="Select Supplier" readonly />
+                <input type="text" class="form-control" id="supplierid" placeholder="Select Supplier" readonly />
+              </div>
+              <div class="col-md-6">
+                <label for="purchasedate" class="form-label">Purchase Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="purchasedate" readonly />
+              </div>
+            </div>
+   <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="voucher_no" class="form-label">Voucher No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="voucher_no" readonly />
+              </div>
+              <div class="col-md-6">
+                <label for="returnDate" class="form-label">Return Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" id="returnDate" />
+              </div>
+            </div>
+<div class="row mb-3">
+   <div class="col-md-6">
+                <label for="invoice_no" class="form-label">Invoice no <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="invoice_no" readonly />
+              </div>
+</div>
+            <hr />
+
+            <table class="table table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Product</th>
+                
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Sub Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="purchasereturntableBody">
+                <!-- JS will append rows here -->
+              </tbody>
+            </table>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="narration" class="form-label">Narration</label>
+                <textarea class="form-control" id="narration" rows="3"></textarea>
+              </div>
+              <div class="col-md-6 text-end">
+                <label for="totalAmount" class="form-label">Total</label>
+                <input type="text" class="form-control text-end" id="totalAmount" readonly />
+              </div>
+            </div>
+
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary px-5">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div id="footer-container"></div>
+    </div>
+  </div>
+
+  <!-- JS Scripts -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/jquery.dataTables.min.js"></script>
+  <script src="scripts/dataTables.buttons.min.js"></script>
+  <script src="scripts/jszip.min.js"></script>
+  <script src="scripts/pdfmake.min.js"></script>
+  <script src="scripts/vfs_fonts.js"></script>
+  <script src="scripts/buttons.html5.min.js"></script>
+  <script src="scripts/buttons.print.min.js"></script>
+  <script src="config.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const $ = (id) => document.getElementById(id);
+  function showInlineAlert(message, type = 'info') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    alertPlaceholder.innerHTML = alertHTML;
+
+    setTimeout(() => {
+      const alert = alertPlaceholder.querySelector('.alert');
+      if (alert) alert.classList.remove('show');
+    }, 5000);
+  }
+
+    // Set today's date
+    $('returnDate').value = new Date().toISOString().split('T')[0];
+
+    // Load sidebar
+    fetch("sidebar.html")
+      .then(res => res.text())
+      .then(html => $("sidebar-container").innerHTML = html);
+
+    // Extract query param
+    const purchaseId = new URLSearchParams(location.search).get("id");
+
+    // Load purchase details
+if (purchaseId) {
+  fetch(`${BASEURL}Purchase/Detail/${purchaseId}`)
+    .then(res => res.json())
+    .then(data => {
+      const details = data.PurchaseDetail;
+      if (!Array.isArray(details) || !details.length) return;
+
+      const first = details[0];
+      $("invoice_no").value = first.invoice_no || '';
+      $("supplier_id").value = first.supplier_id || '';
+      $("supplierid").value = first.supplier_name || '';
+      $("voucher_no").value = first.voucher_no || '';
+      $("purchasedate").value = first.purchase_date?.split("T")[0] || '';
+
+      const tbody = $("purchasereturntableBody");
+      tbody.innerHTML = "";
+
+      const filteredDetails = details.filter(item => 
+        (item.available_quantity - item.total_returned_quantity) > 0
+      );
+
+      if (!filteredDetails.length) {
+        // Show "All purchases are returned"
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td colspan="5" class="text-center text-danger">
+            All purchases are returned.
+          </td>`;
+        tbody.appendChild(row);
+        return;
+      }
+
+      filteredDetails.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>
+            <input type="hidden" class="product-id" value="${item.product_id}" />
+            <input type="text" class="form-control" value="${item.product_name}" readonly />
+          </td>
+          <td>
+            <input type="number" min="0" class="form-control qty" 
+              max="${item.available_quantity - item.total_returned_quantity}" 
+              value="${item.available_quantity - item.total_returned_quantity}" 
+              oninput="updateSubtotal(this)" />
+          </td>
+          <td>
+            <input type="number" class="form-control price" readonly 
+              value="${item.retail_price}" 
+              oninput="updateSubtotal(this)" />
+          </td>
+          <td><input type="text" class="form-control subtotal" readonly /></td>
+          <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">×</button>
+          </td>`;
+        tbody.appendChild(row);
+        updateSubtotal(row.querySelector(".qty"));
+      });
+
+      updateTotal();
+    })
+    .catch(err => console.error("❌ Load error:", err));
+}
+
+    // Form submit
+    $("purchaseReturnForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        user_id:'1',
+       location_id:'1',
+        supplier_id: $("supplier_id").value,
+        purchase_date: $("purchasedate").value,
+        voucher_no: $("voucher_no").value,
+          invoice_no: $("invoice_no").value,
+        return_date: $("returnDate").value,
+        narration: $("narration").value,
+        amount: $("totalAmount").value,
+        purchase_id: purchaseId,
+        products: []
+      };
+    
+
+      document.querySelectorAll("#purchasereturntableBody tr").forEach(row => {
+        formData.products.push({
+          product_id: +row.querySelector(".product-id").value || 0,
+          product_name: row.cells[0].querySelector("input[type='text']").value,
+          qty: +row.querySelector(".qty").value,
+          price: +row.querySelector(".price").value,
+          subtotal: +row.querySelector(".subtotal").value
+        });
+      });
+  if (formData.products.length === 0) {
+    showInlineAlert("Cannot perform purchase return. No valid products found.", "danger");
+    return;
+  }
+      try {
+        const response = await fetch(`${BASEURL}purchaseReturnRoutes/add`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+        console.log("✅ Submitted:", result,formData);
+    
+                          localStorage.setItem('globalAlertMessage',"Purchase return added successfully");
+localStorage.setItem('globalAlertType', 'success');
+
+window.location.href = 'view-purchase-return.html';
+      } catch (error) {
+      
+    
+                    localStorage.setItem('globalAlertMessage',"Failed to submit purchase return");
+localStorage.setItem('globalAlertType', 'danger');
+    window.location.href = 'view-purchase-return.html';
+      }
+    });
+  });
+
+  // Helpers
+  function removeRow(btn) {
+    btn.closest("tr").remove();
+    updateTotal();
+  }
+
+  function updateSubtotal(input) {
+    const row = input.closest("tr");
+    const qty = +row.querySelector(".qty").value || 0;
+    const price = +row.querySelector(".price").value || 0;
+    row.querySelector(".subtotal").value = (qty * price).toFixed(2);
+    updateTotal();
+  }
+
+  function updateTotal() {
+    let total = 0;
+    document.querySelectorAll(".subtotal").forEach(input => {
+      total += +input.value || 0;
+    });
+    document.getElementById("totalAmount").value = total.toFixed(2);
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Items Import</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS Dependencies -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link href="scripts/select2.min.css" rel="stylesheet" />
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .main-container {
+        display: flex;
+        min-height: 100vh;
+      }
+      #sidebar-container a {
+        color: #fff;
+        text-decoration: none;
+        display: block;
+        padding: 8px 0;
+      }
+      #sidebar-container a:hover {
+        text-decoration: none;
+      }
+      .content-container {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+      .fw-bold {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Import Items</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">
+                  Items Import
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <!-- ✅ Inline Alerts -->
+          <div id="alertPlaceholder"></div>
+
+          <h3 class="mb-4">Items Import</h3>
+          <form id="importForm" enctype="multipart/form-data" method="POST">
+            <div class="row mb-3">
+              <!-- File Upload -->
+              <div class="col-md-6 mb-3">
+                <label for="importFile" class="form-label fw-bold">
+                  Upload File <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="file"
+                  id="importFile"
+                  name="importFile"
+                  class="form-control"
+                  accept=".csv"
+                  required
+                />
+              </div>
+
+              <!-- Supplier Dropdown -->
+              <div class="col-md-6 mb-3">
+                <label for="supplier" class="form-label fw-bold">
+                  Supplier <span class="text-danger">*</span>
+                </label>
+                <select
+                  id="supplier"
+                  name="supplier"
+                  class="form-select supplier"
+                  required
+                >
+                  <option value="">--Select Supplier--</option>
+                </select>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="col-md-6 d-flex align-items-end mb-3">
+                <button type="submit" class="btn btn-danger w-100">Submit</button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Report Section -->
+          <div id="IncomeStatement"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS Dependencies -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/select2.min.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+      // Load sidebar
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((data) => {
+          $("#sidebar-container").html(data);
+        });
+
+      // ✅ Show Alert Function (like Journal)
+      function showInlineAlert(message, type = "info") {
+        const alertPlaceholder = document.getElementById("alertPlaceholder");
+        const alertHTML = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>`;
+        alertPlaceholder.innerHTML = alertHTML;
+
+        setTimeout(() => {
+          const alert = alertPlaceholder.querySelector(".alert");
+          if (alert) alert.classList.remove("show");
+        }, 4000);
+      }
+
+      // Load suppliers dynamically
+      function loadSuppliers() {
+        fetch(`${BASEURL}Supplier`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.Supplier?.length > 0) {
+              const options = data.Supplier.map(
+                (s) => `<option value="${s.id}">${s.name} (${s.code})</option>`
+              ).join("");
+              $("#supplier").html('<option value="">--Select Supplier--</option>' + options);
+            } else {
+              $("#supplier").html('<option value="">No Supplier found</option>');
+            }
+          })
+          .catch((err) => console.error("Error loading suppliers:", err));
+      }
+
+      $(document).ready(function () {
+        // Initialize select2 for better dropdown
+        $("#supplier").select2({
+          placeholder: "--Select Supplier--",
+          width: "100%",
+        });
+
+        // Load suppliers when page loads
+        loadSuppliers();
+
+        // Handle form submit via AJAX
+        $("#importForm").on("submit", function (e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+
+          fetch(`${BASEURL}import/importNew`, {
+            method: "POST",
+            body: formData,
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success) {
+                showInlineAlert("✅ Items imported successfully!", "success");
+                $("#importForm")[0].reset();   // ✅ Reset form
+                $("#supplier").val("").trigger("change"); // reset supplier
+              } else {
+                showInlineAlert("❌ Error: " + (data.message || "Import failed"), "danger");
+              }
+            })
+            .catch((err) => {
+              console.error("Upload error:", err);
+              showInlineAlert("⚠️ Something went wrong while uploading.", "warning");
+            });
+        });
+      });
+    </script>
+  </body>
+</html>

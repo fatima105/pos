@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Unit</title>
+
+    <!-- Bootstrap CSS -->
+   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray ">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Add Unit</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="units.html" class="text-primary text-decoration-none"
+                    >Units</a
+                  >
+                </li>
+                <li
+                  class="breadcrumb-item active text-muted"
+                  aria-current="page"
+                >
+                  Add
+                </li>
+              </ol>
+            </nav>
+          </div>
+   <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <!-- Unit Add Section -->
+          <div style="margin-top:10px;"class="d-flex justify-content-center  ">
+            <div
+              class="card px-2 shadow-lg bg-white"
+              style="width: 80%; max-width: 500px"
+            >
+       
+              <form action="" id="UnitAdd">
+                <div class="row">
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold"
+                      >Unit Name <span class="text-danger fw-bold">*</span></label
+                    >
+                    <input id="name" type="text" class="form-control" required />
+                  </div>
+             
+              
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold"
+                      >Status <span class="text-danger  fw-bold">*</span></label
+                    >
+                    <select id="status" class="form-select">
+                      <option>Active</option>
+                      <option>Block</option>
+                    </select>
+                
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">Submit</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+ <!-- Error Modal -->
+<div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger" id="ErrorModalLabel">
+          <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+          Please check your errors
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+   
+
+   <script src="scripts/jquery-3.6.0.min.js"></script>
+ <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/scripts.js"></script>
+        <script src="config.js"></script>
+    <script src="scripts/sweetalert.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          // Load Footer
+          fetch("scripts/footer.html")
+            .then((response) => response.text())
+            .then((data) => {
+              document.getElementById("footer-container").innerHTML = data;
+              document.getElementById("year").textContent =
+                new Date().getFullYear();
+            })
+            .catch((error) => console.error("Error loading footer:", error));
+      
+          // Load Sidebar
+          fetch("sidebar.html")
+            .then((response) => response.text())
+            .then(
+              (html) =>
+                (document.getElementById("sidebar-container").innerHTML = html)
+            );
+        });
+      
+        // Form submission logic
+        const UnitAdd = document.getElementById("UnitAdd");
+      
+        UnitAdd.addEventListener("submit", (e) => {
+          e.preventDefault();
+      
+          const name = document.getElementById("name").value.trim();
+          const status = document.getElementById("status").value;
+      
+          if (name === "" || status === "") {
+            const errorModal = new bootstrap.Modal(document.getElementById('ErrorModal'));
+            errorModal.show();
+          } else {
+            const apiUrl = `${BASEURL}Unit`;
+      
+            fetch(apiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ name, status })
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.id) {
+                    // This must run after sweetalert.min.js is loaded
+          localStorage.setItem('globalAlertMessage',`Unit Added `);
+localStorage.setItem('globalAlertType', 'success');
+                
+                  document.getElementById("UnitAdd").reset();
+
+window.location.href = "units.html"; // change to your target page
+                } else {
+                   localStorage.setItem('globalAlertMessage',`Error Adding Unit`);
+localStorage.setItem('globalAlertType', 'danger');
+                }
+              })
+              .catch((err) => {
+                console.error("Error:", err);
+              localStorage.setItem('globalAlertMessage',`Failed to submit Unit`);
+localStorage.setItem('globalAlertType', 'danger');
+              });
+          }
+        });
+      </script>
+
+      
+  </body>
+</html>

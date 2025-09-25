@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cash Journal Details</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="scripts/style.css" />
+
+  <style>
+    .bg-buttons {
+      background-color: #6c757d;
+      color: #e9ecef;
+    }
+    .bg-buttons .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+      border: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Content Area -->
+    <div class="content-container">
+<div class="container-fluid bg-white py-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex align-items-center">
+      <div id="alertPlaceholder" class="me-3"></div>
+      <h2 class="mb-0">Journal Details</h2>
+    </div>
+
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+          <a href="index.html" class="text-primary text-decoration-none">Home</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="Journal-voucher.html" class="text-primary text-decoration-none">Journal</a>
+        </li>
+        <li class="breadcrumb-item active text-muted" aria-current="page">Details</li>
+      </ol>
+    </nav>
+  </div>
+
+
+
+        <div class="card shadow-lg mt-5">
+          <div class="container mt-4 mb-4">
+            <hr class="mt-4" />
+            <!-- Table -->
+          <div class="d-flex justify-content-end mb-3">
+  <button id="pdfExportBtn" class="btn btn-danger btn-sm d-flex align-items-center">
+    <i class="fas fa-file-pdf fa-2x me-2"></i>
+  </button>
+</div>
+            <table id="CashJournalDetailsTable" class="table table-striped table-bordered mt-3">
+              <thead class="table-light text-dark">
+                <tr>
+                  <th>Voucher No</th>
+                  <th>Date</th>
+                    <th>Account</th>
+                  <th>Remarks</th>
+                    <th>Debit</th>
+                      <th>Credit</th>
+               
+                  <th>Added By</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Footer -->
+    
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Scripts -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/jquery.dataTables.min.js"></script>
+  <script src="scripts/dataTables.buttons.min.js"></script>
+  <script src="scripts/jszip.min.js"></script>
+  <script src="scripts/pdfmake.min.js"></script>
+  <script src="scripts/vfs_fonts.js"></script>
+  <script src="scripts/buttons.html5.min.js"></script>
+  <script src="scripts/buttons.print.min.js"></script>
+  <script src="scripts/style.js"></script>
+  <script src="config.js"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<script>
+
+        // Load Sidebar
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => document.getElementById("sidebar-container").innerHTML = html);
+
+  function showInlineAlert(message, type = 'success') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>`;
+    alertPlaceholder.innerHTML = alertHTML;
+
+    // Auto-hide after 5s
+    setTimeout(() => {
+      const alert = alertPlaceholder.querySelector('.alert');
+      if (alert) alert.classList.remove('show');
+    }, 5000);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    function getQueryParam(param) {
+      return new URLSearchParams(window.location.search).get(param);
+    }
+
+    const journalID = getQueryParam('id');
+    let totalDebit = 0;
+    let totalCredit = 0;
+    let voucherNo = "";
+
+    const table = $('#CashJournalDetailsTable').DataTable({
+      paging: false,
+      searching: false,
+      info: false,
+    });
+
+    if (journalID) {
+      fetch(`${BASEURL}CashJournalVoucher/${journalID}`)
+        .then(res => res.json())
+        .then(response => {
+          const rows = response.data;
+
+          rows.forEach(item => {
+            const debit = parseFloat(item.debit || 0);
+            const credit = parseFloat(item.credit || 0);
+
+            totalDebit += debit;
+            totalCredit += credit;
+            voucherNo = item.code;
+
+            // ✅ Add delete button
+            const deleteBtn = `<button class="btn btn-sm btn-danger deleteBtn" data-id="${item.id}">
+                                  <i class="fas fa-trash"></i>
+                               </button>`;
+
+            table.row.add([
+              item.code || '',
+              item.date || '',
+              item.head_name || '',
+              item.narration || '',
+              debit.toLocaleString(),
+              credit.toLocaleString(),
+              item.user_id || '',
+              deleteBtn
+            ]);
+          });
+
+          table.draw();
+
+          // ✅ Delete functionality
+          $(document).on("click", ".deleteBtn", function () {
+            const id = $(this).data("id");
+
+            if (confirm("Are you sure you want to delete this entry?")) {
+              fetch(`${BASEURL}CashJournalVoucher/${id}`, {
+                method: "DELETE"
+              })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.message?.includes("success")) {
+                    showInlineAlert("Deleted Successfully!", "success");
+                    table.row($(this).parents("tr")).remove().draw();
+                  } else {
+                    showInlineAlert("Failed to delete entry!", "danger");
+                  }
+                })
+                .catch(() => showInlineAlert("Error deleting entry!", "danger"));
+            }
+          });
+
+          // ✅ PDF Export
+          document.getElementById("pdfExportBtn").addEventListener("click", () => {
+            if (!voucherNo) voucherNo = "Voucher";
+
+            const docDefinition = {
+              content: [
+                { text: `Voucher# : ${voucherNo}`, bold: true, margin: [0, 0, 0, 5] },
+                { text: `Date : ${rows[0].date}`, margin: [0, 0, 0, 5] },
+                { text: `Added By : ${rows[0].user_id}`, margin: [0, 0, 0, 15] },
+                {
+                  table: {
+                    widths: ["*", "*", "*", "*"],
+                    body: [
+                      ["Account", "Narration", "Debit", "Credit"],
+                      ...rows.map(r => [
+                        r.head_name,
+                        r.narration,
+                        r.debit,
+                        r.credit
+                      ]),
+                      [
+                        { text: "Total", colSpan: 2, alignment: "right", bold: true }, {},
+                        { text: totalDebit.toLocaleString() + "/-", bold: true },
+                        { text: totalCredit.toLocaleString() + "/-", bold: true }
+                      ]
+                    ],
+                  },
+                  margin: [0, 0, 0, 40],
+                },
+                {
+                  columns: [
+                    { text: "____________________\nPrepared By", alignment: "center" },
+                    { text: "____________________\nApproved By", alignment: "center" },
+                  ],
+                },
+              ],
+            };
+
+            pdfMake.createPdf(docDefinition).download(`${voucherNo}.pdf`);
+          });
+        })
+        .catch(err => console.error("Error fetching journal details:", err));
+    }
+  });
+</script>
+
+
+</body>
+</html>

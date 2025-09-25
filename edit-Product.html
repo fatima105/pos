@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Product</title>
+    <link href="scripts/select2.min.css" rel="stylesheet" />
+    <!-- Bootstrap CSS -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Edit Product</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="products.html" class="text-primary text-decoration-none">Product</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">
+                  Edit
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <div style="margin-top:10px;" class="d-flex justify-content-center">
+            <div class="card py-3 px-3 shadow-lg bg-white" style="width: 80%; max-width: 500px">
+              <form id="ProductUpdate">
+                <input id="ProductId" value="" type="hidden" />
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Product Name <span class="text-danger">*</span></label>
+                  <input id="name" type="text" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Retail Price <span class="text-danger">*</span></label>
+                  <input id="retail_price" type="text" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Parent Category <span class="text-danger">*</span></label>
+                  <select id="category_id" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Sub Category <span class="text-danger">*</span></label>
+                  <select id="sub_category_id" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Product Unit <span class="text-danger">*</span></label>
+                  <select id="unit_id" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">SKU <span class="text-danger">*</span></label>
+                  <input id="SKU" type="text" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Product Description <span class="text-danger">*</span></label>
+                  <textarea id="description" rows="4" class="form-control" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Tax <span class="text-danger">*</span></label>
+                  <select id="tax" class="form-select">
+                    <option>Inclusive Tax</option>
+                    <option>Exclusive Tax</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Status <span class="text-danger">*</span></label>
+                  <select id="status" class="form-select">
+                    <option>Active</option>
+                    <option>Block</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Selected Category:</label>
+                  <div id="current_category_display" class="form-control bg-light"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-danger" id="ErrorModalLabel">
+              <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+              Please check your errors
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="scripts/scripts.js"></script>
+    <script src="config.js"></script>
+    <script src="scripts/select2.min.js"></script>
+
+<script>
+  // Load footer
+  fetch("scripts/footer.html")
+    .then(response => response.text())
+    .then(data => {
+      document.getElementById("footer-container").innerHTML = data;
+      document.getElementById("year").textContent = new Date().getFullYear();
+    })
+    .catch(error => console.error("Error loading footer:", error));
+
+  // Restrict retail_price input to numbers and dot
+  document.getElementById('retail_price').addEventListener('input', function () {
+    this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const ProductId = new URLSearchParams(window.location.search).get('id');
+    document.getElementById("ProductId").value = ProductId;
+
+    let allCategories = [], allUnits = [], allSubCategories = [];
+    let currentProductData = null;
+    let categoriesLoaded = false; // Track if categories are loaded
+
+    // Init Select2
+    $('#category_id, #sub_category_id, #unit_id').select2({
+      placeholder: "Select an option",
+      allowClear: true,
+      width: '100%'
+    });
+
+    // Load Categories with better error handling
+    fetch(BASEURL + 'Category')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(response => {
+        console.log("Categories response:", response); // Debug log
+        const categories = response.Category || [];
+        allCategories = categories;
+        categoriesLoaded = true;
+        
+        const categorySelect = $('#category_id');
+        categorySelect.empty().append('<option value="">Select Category</option>');
+        categories.filter(cat => cat.status === "Active").forEach(cat => {
+          categorySelect.append(new Option(cat.name, cat.id));
+        });
+        categorySelect.trigger('change.select2');
+        
+        // If editing and categories are loaded, load product data
+        if (ProductId) {
+          loadProductData();
+        }
+      })
+      .catch(error => {
+        console.error("Error loading categories:", error);
+        showInlineAlert("❌ Failed to load categories", "danger");
+      });
+
+    // Load Units with better error handling
+    fetch(BASEURL + 'Unit')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(response => {
+        console.log("Units response:", response); // Debug log
+        const units = response.Unit || [];
+        allUnits = units;
+        const unitSelect = $('#unit_id');
+        unitSelect.empty().append('<option value="">Select Unit</option>');
+        units.filter(u => u.status === "Active").forEach(u => {
+          unitSelect.append(new Option(u.name, u.id));
+        });
+        unitSelect.trigger('change.select2');
+      })
+      .catch(error => {
+        console.error("Error loading units:", error);
+        showInlineAlert("❌ Failed to load units", "danger");
+      });
+
+    // Category change -> load SubCategories with better error handling
+    $('#category_id').on("change", function () {
+      const categoryId = $(this).val();
+      console.log("Category changed to:", categoryId); // Debug log
+      
+      const category = allCategories.find(cat => cat.id == categoryId);
+      document.getElementById("current_category_display").textContent = category ? category.name : "";
+
+      if (!categoryId) {
+        $('#sub_category_id').empty().append('<option value="">Select Subcategory</option>').trigger('change.select2');
+        return;
+      }
+
+      // Show loading state
+      $('#sub_category_id').empty().append('<option value="">Loading subcategories...</option>').trigger('change.select2');
+
+      console.log("Fetching subcategories for category:", categoryId); // Debug log
+      fetch(`${BASEURL}SubCategory/GetSub/${categoryId}`)
+        .then(res => {
+          console.log("Subcategory response status:", res.status); // Debug log
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status} - ${res.statusText}`);
+          }
+          return res.json();
+        })
+        .then(response => {
+          console.log("Subcategories response:", response); // Debug log
+          
+          const subCategories = response.SubCategory || [];
+          allSubCategories = subCategories;
+
+          const subCategorySelect = $('#sub_category_id');
+          subCategorySelect.empty().append('<option value="">Select Subcategory</option>');
+
+          if (subCategories.length === 0) {
+            console.warn("No subcategories found for category:", categoryId);
+            subCategorySelect.append('<option value="">No subcategories available</option>');
+          } else {
+            subCategories.filter(sub => sub.status === "Active").forEach(sub => {
+              subCategorySelect.append(new Option(sub.name, sub.id));
+            });
+          }
+
+          // If editing and we have product data, select the subcategory
+          if (ProductId && currentProductData && currentProductData.sub_category_id) {
+            console.log("Setting subcategory to:", currentProductData.sub_category_id);
+            subCategorySelect.val(currentProductData.sub_category_id).trigger('change.select2');
+          } else {
+            subCategorySelect.trigger('change.select2');
+          }
+        })
+        .catch(error => {
+          console.error("Error loading subcategories:", error);
+          showInlineAlert(`❌ Failed to load subcategories: ${error.message}`, "danger");
+          
+          // Reset subcategory dropdown
+          const subCategorySelect = $('#sub_category_id');
+          subCategorySelect.empty().append('<option value="">Error loading subcategories</option>').trigger('change.select2');
+        });
+    });
+
+    // Separate function to load product data
+    function loadProductData() {
+      if (!ProductId || !categoriesLoaded) return;
+      
+      console.log("Loading product data for ID:", ProductId); // Debug log
+      fetch(`${BASEURL}Product/${ProductId}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log("Product data loaded:", data); // Debug log
+          currentProductData = data;
+
+          document.getElementById("name").value = data.name || "";
+          document.getElementById("retail_price").value = data.retail_price || "";
+          document.getElementById("description").value = data.description || "";
+          document.getElementById("SKU").value = data.SKU || "";
+          document.getElementById("tax").value = data.tax || "Inclusive Tax";
+          document.getElementById("status").value = data.status || "Active";
+
+          // Select category and unit first
+          if (data.category_id) {
+            $('#category_id').val(data.category_id).trigger('change');
+          }
+          if (data.unit_id) {
+            $('#unit_id').val(data.unit_id).trigger('change.select2');
+          }
+        })
+        .catch(error => {
+          console.error("Error loading product data:", error);
+          showInlineAlert(`❌ Failed to load product data: ${error.message}`, "danger");
+        });
+    }
+
+    // Form Submit with better validation
+    document.getElementById("ProductUpdate").addEventListener("submit", function (e) {
+      e.preventDefault();
+      
+      const payload = {
+        id: ProductId,
+        name: document.getElementById("name").value.trim(),
+        description: document.getElementById("description").value.trim(),
+        status: document.getElementById("status").value,
+        retail_price: document.getElementById("retail_price").value.trim(),
+        SKU: document.getElementById("SKU").value.trim(),
+        tax: document.getElementById("tax").value,
+        category_id: document.getElementById("category_id").value,
+        sub_category_id: document.getElementById("sub_category_id").value,
+        unit_id: document.getElementById("unit_id").value
+      };
+
+      console.log("Form payload:", payload); // Debug log
+
+      // Validate required fields
+      const requiredFields = {
+        name: "Product name",
+        description: "Description", 
+        retail_price: "Retail price",
+        category_id: "Category",
+        unit_id: "Unit",
+        sub_category_id: "Subcategory"
+      };
+
+      const missingFields = [];
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!payload[field]) {
+          missingFields.push(label);
+        }
+      }
+
+      if (missingFields.length > 0) {
+        showInlineAlert(`❌ Please fill in the following required fields: ${missingFields.join(', ')}`, "danger");
+        return;
+      }
+
+      fetch(`${BASEURL}Product`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log("Update response:", data); // Debug log
+          if (data.status === "success") {
+            localStorage.setItem('globalAlertMessage', "✅ Product Data Updated");
+            localStorage.setItem('globalAlertType', 'success');
+            window.location.href = "products.html";
+          } else {
+            if (data.error && data.error.includes("SKU")) {
+              showInlineAlert("⚠️ This SKU is already used by another product.", "danger");
+            } else {
+              showInlineAlert(`❌ Product Not Updated: ${data.error || 'Unknown error'}`, "danger");
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Update Error:", err);
+          showInlineAlert(`❌ Failed to Update Product: ${err.message}`, "danger");
+        });
+    });
+  });
+
+  function showInlineAlert(message, type) {
+    let alertBox = document.getElementById("alertPlaceholder");
+    if (!alertBox) {
+      alertBox = document.createElement("div");
+      alertBox.id = "alertPlaceholder";
+      document.getElementById("ProductUpdate").prepend(alertBox);
+    }
+    alertBox.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show mt-2" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+  }
+</script>
+
+  </body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Tax</title>
+
+    <!-- Bootstrap CSS -->
+   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray ">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Edit Tax</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="Tax.html" class="text-primary text-decoration-none"
+                    >Tax</a
+                  >
+                </li>
+                <li
+                  class="breadcrumb-item active text-muted"
+                  aria-current="page"
+                >
+                  Edit
+                </li>
+              </ol>
+            </nav>
+          </div>
+   <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <!-- Tax Edit Section -->
+          <div style="margin-top:10px;"class="d-flex justify-content-center  ">
+            <div
+              class="card  py-3 px-3 shadow-lg bg-white"
+              style="width: 80%; max-width: 500px"
+            >
+       
+              <form action="" id="TaxUpdate">
+                <div class="row">
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold"
+                      >Tax Name <span class="text-danger fw-bold">*</span></label
+                    >
+                    <input id="taxId" type="hidden"class="form-control" required />
+                 
+                    <input id="name" type="text" class="form-control" required />
+                  </div>
+             
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold"
+                      >Tax Rate (%) <span class="text-danger fw-bold">*</span></label
+                    >
+                 
+                    <input id="tax_rate" type="number"class="form-control" required/>
+
+                  </div>
+                  <div class="col-md-12 mb-3">
+                    <label class="form-label fw-bold"
+                      >Status <span class="text-danger  fw-bold">*</span></label
+                    >
+                    <select id="status" class="form-select">
+                      <option>Active</option>
+                      <option>Block</option>
+                    </select>
+                
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+ <!-- Error Modal -->
+<div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger" id="ErrorModalLabel">
+          <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+          Please check your errors
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+   
+    <!-- Bootstrap JS -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+ <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/scripts.js"></script>
+   <script src="config.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          // Load Footer
+          fetch("scripts/footer.html")
+            .then((response) => response.text())
+            .then((data) => {
+              document.getElementById("footer-container").innerHTML = data;
+              document.getElementById("year").textContent =
+                new Date().getFullYear();
+            })
+            .catch((error) => console.error("Error loading footer:", error));
+      
+          // Load Sidebar
+          fetch("sidebar.html")
+            .then((response) => response.text())
+            .then(
+              (html) =>
+                (document.getElementById("sidebar-container").innerHTML = html)
+            );
+        });
+      
+  
+  
+    // This function extracts query parameters from the URL
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+  
+    const taxId = getQueryParam('id');
+    console.log('Tax ID:', taxId);
+    document.getElementById('taxId').value = taxId;
+    if (taxId) {
+  const apiUrl = `${BASEURL}Tax/${taxId}`;
+  
+  fetch(apiUrl)
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return res.json();
+    })
+    .then((data) => {
+      if (data && typeof data === "object") {
+        const { name, status,tax_rate } = data;
+
+        document.getElementById("name").value = name || "";
+        document.getElementById("status").value = status || "Active";
+        document.getElementById("tax_rate").value = tax_rate;
+        
+      } else {
+        throw new Error("Invalid data format");
+      }
+    })
+    .catch((err) => {
+      console.error("Error fetching tax data:", err);
+  
+    });
+} else {
+  console.log("No Tax ID found in the URL.");
+}
+
+
+//Update Tax
+
+        const TaxUpdate = document.getElementById("TaxUpdate");
+      
+        TaxUpdate.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const taxId = document.getElementById("taxId").value;
+          const name = document.getElementById("name").value.trim();
+          const tax_rate = document.getElementById("tax_rate").value.trim();
+          const status = document.getElementById("status").value;
+      console.log(name,tax_rate,status,taxId);
+          if (name === "" || status === ""|| tax_rate === "") {
+            const errorModal = new bootstrap.Modal(document.getElementById('ErrorModal'));
+            errorModal.show();
+          } else {
+            const apiUrl = `${BASEURL}Tax`;
+      
+            fetch(apiUrl, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({id:taxId, name, tax_rate,status })
+            })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.status=="success") {
+   localStorage.setItem('globalAlertMessage',"Tax Data Updated");
+localStorage.setItem('globalAlertType', 'success');
+              
+                  window.location.href = "Tax.html"; // change to your target page
+           
+                } else {
+                     localStorage.setItem('globalAlertMessage',"Error updating Tax");
+localStorage.setItem('globalAlertType', 'danger');
+              
+                }
+              })
+              .catch((err) => {
+                console.error("Error:", err);
+                              localStorage.setItem('globalAlertMessage',"Failed to submit data.");
+localStorage.setItem('globalAlertType', 'danger');
+             
+              });
+          }
+        });
+      </script>
+      
+  </body>
+</html>

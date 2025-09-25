@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purchases Detail</title>
+<link href="scripts/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- DataTables CSS -->
+<!-- Local DataTables CSS -->
+<link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  
+
+    <style>
+      /* Background color only for button container */
+      .bg-buttons {
+        background-color: #6c757d; /* Bootstrap secondary gray */
+        color: #e9ecef;
+        outline: none !important; /* Ensures no outline */
+
+        border: none !important; /* Removes border */
+        box-shadow: none !important; /* Ensures no shadow effect */
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d; /* Bootstrap secondary gray */
+        color: #e9ecef;
+        outline: none !important; /* Ensures no outline */
+
+        border: none !important; /* Removes border */
+        box-shadow: none !important; /* Ensures no shadow effect */
+      }
+    </style>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+      <!-- Delete Confirmation Modal without Backdrop -->
+      <div
+        class="modal fade"
+        id="deleteModal"
+        data-bs-backdrop="false"
+        tabindex="-1"
+        aria-labelledby="deleteModalLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="deleteModalLabel">
+                <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+
+                Please confirm to delete this record
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" id="confirmDelete">
+                Yes, I'm Sure
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger"
+                data-bs-dismiss="modal"
+              >
+                No, I'm Not
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Purchase Detail</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none"
+                    >Home</a
+                  >
+                </li>
+                <li class="breadcrumb-item">
+                  <a
+                    href="view-purchases.html"
+                    class="text-primary text-decoration-none"
+                    >purchases nb</a
+                  >
+                </li>
+                <li
+                  class="breadcrumb-item active text-muted"
+                  aria-current="page"
+                >
+                  Purchase Details
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <div class="card shadow-lg mt-5">
+    <div class="container mt-4 mb-4">
+<div class="row bg-primary" >
+  <!-- Left Side -->
+  <div class="col-md-6 col-sm-6">
+    <p class="mb-2">
+      <strong>Voucher:</strong>
+      <span class="ms-2" id="voucher_no"></span>
+    </p>
+
+ 
+
+    <p class="mb-2">
+      <strong>Date:</strong>
+      <span class="ms-2" id="date"></span>
+    </p>
+  </div>
+
+  <!-- Right Side -->
+  <div class="col-md-6 col-sm-6">
+    <p class="mb-2">
+      <strong>Supplier:</strong>
+      <span class="ms-2" id="supplier_name">
+      
+      </span>
+    </p>
+
+    <p class="mb-2">
+      <strong>Invoice#:</strong>
+      <span class="ms-2" id="invoice_no"></span>
+    </p>
+  </div>
+</div>
+
+  <hr class="mt-2 mb-2" />
+</div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+
+
+ <script src="scripts/jquery.dataTables.min.js"></script>
+<script src="scripts/dataTables.buttons.min.js"></script>
+<script src="scripts/jszip.min.js"></script>
+<script src="scripts/pdfmake.min.js"></script>
+<script src="scripts/vfs_fonts.js"></script>
+<script src="scripts/buttons.html5.min.js"></script>
+<script src="scripts/buttons.print.min.js"></script>
+    <!-- Bootstrap JS -->
+
+<script src="config.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+   
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load Footer
+        fetch("scripts/footer.html")
+          .then((response) => response.text())
+          .then((data) => {
+            document.getElementById("footer-container").innerHTML = data;
+            document.getElementById("year").textContent =
+              new Date().getFullYear();
+          })
+          .catch((error) => console.error("Error loading footer:", error));
+
+        // Load Sidebar
+        fetch("sidebar.html")
+          .then((response) => response.text())
+          .then(
+            (html) =>
+              (document.getElementById("sidebar-container").innerHTML = html)
+          );
+
+        // Initialize DataTable with buttons inside bg-buttons div
+        $("#PurchaseViewTable").DataTable({
+          dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+
+          buttons: [
+            { extend: "copy", className: "btn btn-sm" },
+            { extend: "csv", className: "btn btn-sm" },
+            { extend: "excel", className: "btn btn-sm" },
+            { extend: "pdf", className: "btn btn-sm" },
+            { extend: "print", className: "btn btn-sm" },
+          ],
+        });
+      });
+
+      document.addEventListener("DOMContentLoaded", function () {
+        // Select all delete buttons
+        document.querySelectorAll(".delete-btn").forEach((button) => {
+          button.addEventListener("click", function () {
+            let recordId = this.getAttribute("data-id"); // Get record ID
+
+            // Show the modal
+            let deleteModal = new bootstrap.Modal(
+              document.getElementById("deleteModal")
+            );
+            deleteModal.show();
+
+            // Handle Delete Confirmation
+            document.getElementById("confirmDelete").onclick = function () {
+              console.log("Deleted record with ID:", recordId); // Replace with actual delete logic
+              deleteModal.hide(); // Hide modal after deletion
+            };
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

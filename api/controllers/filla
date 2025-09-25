@@ -1,0 +1,416 @@
+
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+const fs = require('fs');
+
+const dbPath = path.join(__dirname, 'alimart.db'); // Save in project root
+
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('❌ Error connecting to SQLite:', err.message);
+    } else {
+        console.log('✅ Connected to ALiMart SQLite database:', dbPath);
+    }
+});
+
+exports.getAllSupplierLedger = (req, res) => {
+
+  try {
+    const { supplier_id } = req.body;
+    console.log("🔍 getAllSupplierLedger called with supplier_id:", supplier_id);
+console.log("g" + JSON.stringify(db, null, 2));
+
+    if (!supplier_id) {
+      return res.status(400).json({ error: "supplier_id is required." });
+    }
+
+    // Optional: show some existing supplier_ids for debugging
+    const existingIds = db.all(`
+      SELECT DISTINCT supplier_id 
+      FROM chart_of_accounts 
+ 
+    `);
+    console.log("Existing supplier IDs for reference:", existingIds);
+
+    // Fetch supplier info
+    const suppliers = db.all(`
+      SELECT head_code, head_name
+      FROM chart_of_accounts
+      WHERE supplier_id = ?
+    `, [supplier_id]); // supplier_id passed as parameter
+
+    console.log("📊 Supplier query result:", suppliers);
+
+    if (!suppliers || suppliers.length === 0) {
+      return res.status(404).json({ 
+        error: "Supplier not found.",
+        available_supplier_ids: existingIds
+      });
+    }
+
+    // Supplier(s) found: return all matches
+    return res.status(200).json({
+      supplier_id,
+      suppliers // array of {head_code, head_name}
+    });
+
+  } catch (error) {
+    console.error("💥 Error fetching supplier:", error);
+    return res.status(500).json({ 
+      error: "Internal server error", 
+      details: error.message 
+    });
+  }
+};
+
+
+// ==================== CASH FLOW ====================
+exports.getCashFlow = (req, res) => {
+  try {
+    const { start_date, end_date } = req.body;
+    if (!start_date || !end_date) return res.status(400).json({ error: "start_date and end_date are required." });
+
+    const cashAccount = db.prepare(`
+      SELECT head_code, head_name
+      FROM chart_of_accounts
+      WHERE head_name = 'Cash In Hand'
+    `).get();
+
+    if (!cashAccount) return res.status(404).json({ error: "Cash In Hand account not found." });
+
+    const { head_code, head_name } = cashAccount;
+
+    const openingRow = db.prepare(`
+      SELECT COALESCE(SUM(td.debit),0) AS debit, COALESCE(SUM(td.credit),0) AS credit
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id = ? AND trx.date < ?
+    `).get(head_code, start_date) || { debit: 0, credit: 0 };
+
+    const opening_balance = Number(openingRow.debit) - Number(openingRow.credit);
+
+    let ledgerRows = db.prepare(`
+      SELECT trx.date, td.narration,
+             COALESCE(td.debit,0) AS debit,
+             COALESCE(td.credit,0) AS credit
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id = ? AND trx.date BETWEEN ? AND ?
+      ORDER BY trx.date ASC
+    `).all(head_code, start_date, end_date);
+
+    ledgerRows = Array.isArray(ledgerRows) ? ledgerRows : [];
+
+    let runningBalance = opening_balance;
+    const ledger = ledgerRows.map((row, idx) => {
+      const debit = Number(row.debit) || 0;
+      const credit = Number(row.credit) || 0;
+      runningBalance += debit - credit;
+      return {
+        sr: idx + 1,
+        date: row.date,
+        narration: row.narration || "",
+        debit: debit.toFixed(2),
+        credit: credit.toFixed(2),
+        balance: runningBalance.toFixed(2)
+      };
+    });
+
+    const closingRow = db.prepare(`
+      SELECT COALESCE(SUM(td.debit),0) AS debit, COALESCE(SUM(td.credit),0) AS credit
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id = ? AND trx.date <= ?
+    `).get(head_code, end_date) || { debit: 0, credit: 0 };
+
+    const closing_balance = Number(closingRow.debit) - Number(closingRow.credit);
+
+    return res.status(200).json({
+      account_name: head_name,
+      opening_balance: opening_balance.toFixed(2),
+      closing_balance: closing_balance.toFixed(2),
+      ledger
+    });
+
+  } catch (error) {
+    console.error("Error fetching cash flow:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// ==================== CUSTOMER LEDGER ====================
+exports.getAllCustomerLedger = (req, res) => {
+  try {
+    const { start_date, end_date, customer_id } = req.body;
+
+    const customer = db.prepare(`
+      SELECT head_code, head_name 
+      FROM chart_of_accounts 
+      WHERE customer_id = ?
+    `).get(customer_id);
+
+    if (!customer) return res.status(404).json({ error: "Customer not found." });
+
+    const { head_code, head_name } = customer;
+
+    const openingRow = db.prepare(`
+      SELECT COALESCE(SUM(td.debit),0) - COALESCE(SUM(td.credit),0) AS balance
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id = ? AND trx.date < ?
+    `).get(head_code, start_date) || { balance: 0 };
+
+    const opening_balance = Number(openingRow.balance);
+
+    let ledgerRows = db.prepare(`
+      SELECT trx.date, td.narration,
+             COALESCE(td.debit,0) AS debit,
+             COALESCE(td.credit,0) AS credit
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id = ? AND trx.date BETWEEN ? AND ?
+      ORDER BY trx.date ASC
+    `).all(head_code, start_date, end_date);
+
+    ledgerRows = Array.isArray(ledgerRows) ? ledgerRows : [];
+
+    let runningBalance = opening_balance;
+    const ledger = ledgerRows.map((row, idx) => {
+      const debit = Number(row.debit) || 0;
+      const credit = Number(row.credit) || 0;
+      runningBalance += debit - credit;
+      return {
+        sr: idx + 1,
+        date: row.date,
+        narration: row.narration || "",
+        debit: debit.toFixed(2),
+        credit: credit.toFixed(2),
+        balance: runningBalance.toFixed(2)
+      };
+    });
+
+    const closingRow = db.prepare(`
+      SELECT COALESCE(SUM(td.debit),0) - COALESCE(SUM(td.credit),0) AS balance
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id = ? AND trx.date <= ?
+    `).get(head_code, end_date) || { balance: 0 };
+
+    const closing_balance = Number(closingRow.balance);
+
+    return res.status(200).json({
+      customer_id,
+      customer_name: head_name,
+      head_code,
+      start_date,
+      end_date,
+      opening_balance: opening_balance.toFixed(2),
+      closing_balance: closing_balance.toFixed(2),
+      ledger
+    });
+
+  } catch (error) {
+    console.error("Error fetching customer ledger:", error);
+    return res.status(500).json({ error: "Internal server error", details: error.message });
+  }
+};
+
+// ==================== INCOME STATEMENTS ====================
+exports.incomeStatements = async (req, res) => {
+  const locationId = 1; // fixed location
+
+  // utility to get head_code from COA
+  const coaQuery = (headName) => {
+    return new Promise((resolve, reject) => {
+      db.get(
+        `SELECT head_code 
+         FROM chart_of_accounts 
+         WHERE LOWER(head_name)=LOWER(?) AND location_id=?`,
+        [headName, locationId],
+        (err, row) => err ? reject(err) : resolve(row ? row.head_code : null)
+      );
+    });
+  };
+
+  // utility to get transaction IDs by type
+  const getTransactionIds = (type, fromDate, toDate) => {
+    return new Promise((resolve, reject) => {
+      db.all(
+        `SELECT id FROM "Transaction" 
+         WHERE type=? AND date BETWEEN ? AND ? AND location_id=?`,
+        [type, fromDate, toDate, locationId],
+        (err, rows) => err ? reject(err) : resolve(rows.map(r => r.id))
+      );
+    });
+  };
+
+  try {
+    const { fromDate, toDate } = req.body;
+    if (!fromDate || !toDate) {
+      return res.status(400).json({ error: "fromDate and toDate are required" });
+    }
+
+    // STEP 2 & 3: Total Sale
+    const totalSale = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT SUM(sd.net_amount) as total
+         FROM sale s 
+         JOIN sale_details sd ON s.id=sd.sale_id
+         WHERE s.date BETWEEN ? AND ? AND s.location_id=?`,
+        [fromDate, toDate, locationId],
+        (err, row) => err ? reject(err) : resolve(row?.total || 0)
+      );
+    });
+
+    // STEP 4 & 5: Total Sale Return
+    const totalSaleReturn = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT SUM(srd.net_amount) as total
+         FROM sale_return sr
+         JOIN sale_return_details srd ON sr.id=srd.sale_return_id
+         WHERE sr.date BETWEEN ? AND ? AND sr.location_id=?`,
+        [fromDate, toDate, locationId],
+        (err, row) => err ? reject(err) : resolve(row?.total || 0)
+      );
+    });
+
+    // get inventory head_code
+    const inventoryCode = await coaQuery("Inventory");
+
+    // STEP 6: Cost of Goods Sold
+    const saleTrnIds = await getTransactionIds("Sale", fromDate, toDate);
+    let totalCOGS = 0;
+    if (saleTrnIds.length > 0) {
+      const placeholders = saleTrnIds.map(() => "?").join(",");
+      totalCOGS = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT SUM(credit) as total
+           FROM transaction_details
+           WHERE v_id IN (${placeholders}) AND coa_id=?`,
+          [...saleTrnIds, inventoryCode],
+          (err, row) => err ? reject(err) : resolve(row?.total || 0)
+        );
+      });
+    }
+
+    // STEP 7: Return Cost of Goods Sold
+    const returnTrnIds = await getTransactionIds("Sale Return", fromDate, toDate);
+    let totalReturnCOGS = 0;
+    if (returnTrnIds.length > 0) {
+      const placeholders = returnTrnIds.map(() => "?").join(",");
+      totalReturnCOGS = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT SUM(debit) as total
+           FROM transaction_details
+           WHERE v_id IN (${placeholders}) AND coa_id=?`,
+          [...returnTrnIds, inventoryCode],
+          (err, row) => err ? reject(err) : resolve(row?.total || 0)
+        );
+      });
+    }
+
+    // STEP 8: Expenses
+    const totalExpense = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT SUM(ed.amount) as total
+         FROM expense e
+         JOIN expense_details ed ON e.id=ed.expense_id
+         WHERE e.date BETWEEN ? AND ? AND e.location_id=?`,
+        [fromDate, toDate, locationId],
+        (err, row) => err ? reject(err) : resolve(row?.total || 0)
+      );
+    });
+
+    // Calculations
+    const netSale = totalSale - totalSaleReturn;
+    const netCOGS = totalCOGS - totalReturnCOGS;
+    const profitOnSale = netSale - netCOGS;
+    const netProfitLoss = profitOnSale - totalExpense;
+
+    res.json({
+      totalSale,
+      totalSaleReturn,
+      totalCOGS,
+      totalReturnCOGS,
+      totalExpense,
+      netSale,
+      netCOGS,
+      profitOnSale,
+      netProfitLoss
+    });
+
+  } catch (error) {
+    console.error("❌ Error fetching income statements:", error);
+    res.status(500).json({ error: "Internal server error", details: error.message });
+  }
+};
+
+// ==================== EXPENSE LEDGER ====================
+exports.getExpenseLedger = (req, res) => {
+  try {
+    const { start_date, end_date } = req.body;
+    if (!start_date || !end_date) return res.status(400).json({ error: "start_date and end_date are required." });
+
+    const expenses = db.prepare(`SELECT head_code, head_name FROM chart_of_accounts WHERE head_name='Expenses'`).get();
+    if (!expenses) return res.status(404).json({ error: "Expenses account not found." });
+
+    const { head_code, head_name } = expenses;
+
+    const openingRow = db.prepare(`
+      SELECT COALESCE(SUM(td.debit),0)-COALESCE(SUM(td.credit),0) AS balance
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id=? AND trx.date < ?
+    `).get(head_code, start_date) || { balance: 0 };
+
+    const opening_balance = Number(openingRow.balance);
+
+    let ledgerRows = db.prepare(`
+      SELECT trx.date, td.narration, COALESCE(td.debit,0) AS debit, COALESCE(td.credit,0) AS credit
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id=? AND trx.date BETWEEN ? AND ?
+      ORDER BY trx.date ASC
+    `).all(head_code, start_date, end_date);
+
+    ledgerRows = Array.isArray(ledgerRows) ? ledgerRows : [];
+
+    let runningBalance = opening_balance;
+    const ledger = ledgerRows.map((row, idx) => {
+      const debit = Number(row.debit) || 0;
+      const credit = Number(row.credit) || 0;
+      runningBalance += debit - credit;
+      return {
+        sr: idx + 1,
+        date: row.date,
+        narration: row.narration || "",
+        debit: debit.toFixed(2),
+        credit: credit.toFixed(2),
+        balance: runningBalance.toFixed(2)
+      };
+    });
+
+    const closingRow = db.prepare(`
+      SELECT COALESCE(SUM(td.debit),0)-COALESCE(SUM(td.credit),0) AS balance
+      FROM Transaction_details td
+      JOIN "Transaction" trx ON td.v_id = trx.id
+      WHERE td.coa_id=? AND trx.date <= ?
+    `).get(head_code, end_date) || { balance: 0 };
+
+    const closing_balance = Number(closingRow.balance);
+
+    return res.status(200).json({
+      account_name: head_name,
+      opening_balance: opening_balance.toFixed(2),
+      closing_balance: closing_balance.toFixed(2),
+      ledger
+    });
+
+  } catch (error) {
+    console.error("Error fetching expense ledger:", error);
+    return res.status(500).json({ error: "Internal server error", details: error.message });
+  }
+};
+
+
+

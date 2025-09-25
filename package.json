@@ -1,0 +1,39 @@
+{
+  "name": "node-pos",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.node.pos",
+    "productName": "NodePOS",
+    "files": [
+      "**/*",
+      "!node_modules/.cache",
+      "main.js",
+      "index.html",
+      "api/**",
+      "node_modules/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "api",
+        "to": "api"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "devDependencies": {
+    "electron": "^34.5.8",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "archiver": "^7.0.1",
+    "pdfkit": "^0.17.1"
+  }
+}

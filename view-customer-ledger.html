@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Customer Ledger Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS Dependencies -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link href="scripts/select2.min.css" rel="stylesheet" />
+  <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+  <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background-color: #f8f9fa; }
+    .main-container { display: flex; min-height: 100vh; }
+    .content-container { flex: 1; padding: 20px; }
+    .select2-container { width: 100% !important; }
+    table.dataTable tbody tr td { vertical-align: middle; }
+  </style>
+</head>
+<body>
+<div class="main-container">
+  <!-- Sidebar -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content -->
+  <div class="content-container">
+    <h3 class="mb-4">Customer Ledger Report</h3>
+          <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+    <div class="row mb-3">
+      <div class="col-md-6 mb-3">
+        <label for="fromDate" class="form-label fw-bold">From Date <span class="text-danger">*</span></label>
+        <input type="date" id="fromDate" class="form-control" />
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="toDate" class="form-label fw-bold">To Date <span class="text-danger">*</span></label>
+        <input type="date" id="toDate" class="form-control" />
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label for="customer_id" class="form-label fw-bold">Customer <span class="text-danger">*</span></label>
+        <select id="customer_id" class="form-select select2">
+          <option value="">-- Select Customer --</option>
+        </select>
+      </div>
+
+      <div class="col-md-6 d-flex align-items-end mb-3">
+        <button id="getReportBtn" class="btn btn-danger w-100">Get Report</button>
+      </div>
+    </div>
+
+    <div id="reportContainer"></div>
+  </div>
+</div>
+
+<!-- JS Dependencies -->
+<script src="scripts/jquery-3.6.0.min.js"></script>
+<script src="scripts/bootstrap.bundle.min.js"></script>
+<script src="scripts/select2.min.js"></script>
+<script src="scripts/jquery.dataTables.min.js"></script>
+<script src="scripts/dataTables.buttons.min.js"></script>
+<script src="scripts/jszip.min.js"></script>
+<script src="scripts/pdfmake.min.js"></script>
+<script src="scripts/vfs_fonts.js"></script>
+<script src="scripts/buttons.html5.min.js"></script>
+<script src="scripts/buttons.print.min.js"></script>
+<script src="config.js"></script>
+
+<script>
+
+         function showInlineAlert(message, type = 'info') {
+        const alertPlaceholder = document.getElementById('alertPlaceholder');
+        const alertHTML = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        `;
+        alertPlaceholder.innerHTML = alertHTML;
+
+        setTimeout(() => {
+          const alert = alertPlaceholder.querySelector('.alert');
+          if (alert) alert.classList.remove('show');
+        }, 5000);
+      }
+  // Set max date to today
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("fromDate").setAttribute("max", today);
+  document.getElementById("toDate").setAttribute("max", today);
+
+  // Load Sidebar
+  fetch("sidebar.html")
+    .then(res => res.text())
+    .then(html => document.getElementById("sidebar-container").innerHTML = html);
+
+  $(document).ready(function () {
+    $(".select2").select2({ placeholder: "Select Customer", allowClear: true });
+
+    // Load customer options dynamically
+    loadCustomers();
+
+    $("#getReportBtn").on("click", function () {
+      const customerId = $("#customer_id").val();
+      const fromDate = $("#fromDate").val();
+      const toDate = $("#toDate").val();
+
+      if (!customerId || !fromDate || !toDate) {
+       showInlineAlert("Please fill all required fields.","danger");
+        return;
+      }
+console.log(fromDate,toDate);
+      fetch(`${BASEURL}Reports/CustomerLedgerTest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_id: customerId,
+          start_date: fromDate,
+          end_date: toDate
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.ledger && data.ledger.length) {
+          generateLedgerTable(data.ledger, parseFloat(data.opening_balance));
+        } else {
+          generateLedgerTable([], 0);
+      showInlineAlert("No ledger data found for the selected customer and date range.","danger");
+        }
+      })
+      .catch(err => {
+        console.error("Error fetching ledger:", err);
+        showInlineAlert("Failed to load ledger data.","danger");
+      });
+    });
+  });
+
+  function loadCustomers() {
+    fetch(`${BASEURL}Customer`)
+      .then(res => res.json())
+      .then(data => {
+        const select = $("#customer_id");
+        if (data.Customer && data.Customer.length) {
+          data.Customer.forEach(c => {
+            select.append(`<option value="${c.id}">${c.name} (${c.company})</option>`);
+          });
+        }
+      })
+      .catch(err => console.error("Failed to load customers:", err));
+  }
+
+  function generateLedgerTable(ledgerEntries, openingBalance = 0) {
+    let balance = openingBalance;
+    let rows = "";
+
+    ledgerEntries.forEach((entry, index) => {
+      const debit = parseFloat(entry.debit || 0);
+      const credit = parseFloat(entry.credit || 0);
+      balance += debit - credit;
+
+      rows += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${entry.date || ""}</td>
+          <td>${entry.narration || ""}</td>
+          <td class="text-end">${debit.toFixed(2)}</td>
+          <td class="text-end">${credit.toFixed(2)}</td>
+          <td class="text-end">${balance.toFixed(2)}</td>
+        </tr>
+      `;
+    });
+
+    const tableHtml = `
+      <table id="reportTable" class="table table-bordered table-striped mt-4">
+        <thead class="table-dark">
+          <tr>
+            <th>Sr.</th>
+            <th>Date</th>
+            <th>Narration</th>
+            <th>Dr.</th>
+            <th>Cr.</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <th colspan="5" class="text-end">Closing Balance:</th>
+            <th class="text-end">${balance.toFixed(2)}</th>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+
+    $("#reportContainer").html(tableHtml);
+
+    // Initialize DataTable with export buttons
+    $("#reportTable").DataTable({
+      destroy: true,
+      dom: 'Bfrtip',
+      buttons: ['copy', 'excel', 'pdf', 'print'],
+      order: [[1, 'asc']]
+    });
+  }
+</script>
+</body>
+</html>

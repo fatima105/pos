@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Items Import</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS Dependencies -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link href="scripts/select2.min.css" rel="stylesheet" />
+    <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .main-container {
+        display: flex;
+        min-height: 100vh;
+      }
+      #sidebar-container a {
+        color: #fff;
+        text-decoration: none;
+        display: block;
+        padding: 8px 0;
+      }
+      #sidebar-container a:hover {
+        text-decoration: none;
+      }
+      .content-container {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+      .fw-bold {
+        font-weight: bold;
+      }
+      .table-summary td {
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Import Items</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none"
+                    >Home</a
+                  >
+                </li>
+                <li
+                  class="breadcrumb-item active text-muted"
+                  aria-current="page"
+                >
+                  Items Import Report
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <h3 class="mb-4 mt-5">Items Import Report</h3>
+          <!-- Alert Placeholder -->
+<div id="alertPlaceholder" class="mb-3"></div>
+
+
+          <form id="importForm" enctype="multipart/form-data" method="POST">
+            <div class="row mb-3 mt-5">
+              <!-- File Upload -->
+              <div class="col-md-6 mb-3">
+                <label for="importFile" class="form-label fw-bold">
+                  Upload File <span class="text-danger">*</span>
+                </label>
+                <input
+                  type="file"
+                  id="importFile"
+                  name="importFile"
+                  class="form-control"
+                  accept=".csv"
+                  required
+                />
+              </div>
+
+              <!-- Supplier Dropdown -->
+              <div class="col-md-6 mb-3">
+                <label for="supplier" class="form-label fw-bold">
+                  Supplier <span class="text-danger">*</span>
+                </label>
+                <select
+                  id="supplier"
+                  name="supplier"
+                  class="form-select supplier"
+                  required
+                >
+                  <option value="">--Select Supplier--</option>
+                </select>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="col-md-6 d-flex align-items-end mb-3">
+                <button type="submit" class="btn btn-danger w-100">
+                  Submit
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Report Section -->
+          <div id="IncomeStatement"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS Dependencies -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/select2.min.js"></script>
+    <script src="scripts/jquery.dataTables.min.js"></script>
+    <script src="scripts/dataTables.buttons.min.js"></script>
+    <script src="scripts/jszip.min.js"></script>
+    <script src="scripts/pdfmake.min.js"></script>
+    <script src="scripts/vfs_fonts.js"></script>
+    <script src="scripts/buttons.html5.min.js"></script>
+    <script src="scripts/buttons.print.min.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+      function showAlert(message, type = 'danger') {
+  const alertPlaceholder = document.getElementById('alertPlaceholder');
+  if (!alertPlaceholder) return;
+
+  alertPlaceholder.innerHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+
+  alertPlaceholder.scrollIntoView({ behavior: 'smooth' });
+
+  // Auto dismiss after 5s
+  setTimeout(() => {
+    const alertDiv = alertPlaceholder.querySelector('.alert');
+    if (alertDiv) {
+      alertDiv.classList.remove('show');
+      alertDiv.classList.add('fade');
+      setTimeout(() => alertDiv.remove(), 300);
+    }
+  }, 5000);
+}
+
+      // Load sidebar
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((data) => {
+          $("#sidebar-container").html(data);
+        });
+
+      // Load suppliers dynamically
+      function loadSuppliers() {
+        fetch(`${BASEURL}Supplier`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.Supplier?.length > 0) {
+              const options = data.Supplier.map(
+                (s) =>
+                  `<option value="${s.id}">${s.name} (${s.code})</option>`
+              ).join("");
+              $("#supplier").html(
+                '<option value="">--Select Supplier--</option>' + options
+              );
+            } else {
+              $("#supplier").html('<option value="">No Supplier found</option>');
+            }
+          })
+          .catch((err) =>
+            console.error("Error loading suppliers:", err)
+          );
+      }
+
+      $(document).ready(function () {        // Initialize select2 for better dropdown
+        $("#supplier").select2({
+          placeholder: "--Select Supplier--",
+          width: "100%",
+        });
+
+        // Load suppliers when page loads
+        loadSuppliers();
+
+        // Handle form submit via AJAX
+// Handle form submit via AJAX
+$("#importForm").on("submit", function (e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+
+  fetch(`${BASEURL}import/import`, {
+    method: "POST",
+    body: formData,
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Network response was not ok");
+      return res.blob();
+    })
+  .then((blob) => {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.style.display = "none";
+  a.href = url;
+  a.download = "Items_Conflict_Report.pdf"; // forces download
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+})
+.catch((err) => {
+      console.error("Upload error:", err);
+      showAlert("Something went wrong while uploading.", "danger");
+    });
+});
+
+});
+
+    </script>
+  </body>
+</html>

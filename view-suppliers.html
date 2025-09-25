@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Suppliers</title>
+
+    <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+<!-- Local DataTables CSS -->
+<link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  
+    <style>
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+    </style>
+
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <div id="sidebar-container"></div>
+
+      <!-- Delete Confirmation Modal -->
+      <div class="modal fade" id="deleteModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="deleteModalLabel">
+                <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                Please confirm to delete this record
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" id="confirmDelete">Yes, I'm Sure</button>
+              <button type="button" class="btn btn-danger" data-bs-dismiss="modal">No, I'm Not</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Suppliers</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">Suppliers</li>
+              </ol>
+            </nav>
+          </div>
+   <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <div class="card shadow-lg mt-5">
+            <div class="container mt-4 mb-4">
+              <div class="d-flex justify-content-end">
+                <a href="add-supplier.html" class="btn btn-primary btn-sm d-flex align-items-center px-3 py-2">
+                  <i class="fa-solid fa-plus me-1"></i> Add Supplier
+                </a>
+              </div>
+              <hr class="mt-2" />
+
+              <table id="supplierTable" class="table table-striped table-bordered mt-5">
+                <thead class="table-light text-dark">
+                  <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Contact</th>
+                    <th>CNIC</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- JS Scripts -->
+    <!-- jQuery -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+ <script src="scripts/jquery.dataTables.min.js"></script>
+<script src="scripts/dataTables.buttons.min.js"></script>
+<script src="scripts/jszip.min.js"></script>
+<script src="scripts/pdfmake.min.js"></script>
+<script src="scripts/vfs_fonts.js"></script>
+<script src="scripts/buttons.html5.min.js"></script>
+<script src="scripts/buttons.print.min.js"></script>
+
+ <script src="config.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load footer and sidebar
+        fetch("scripts/footer.html")
+          .then(res => res.text())
+          .then(html => {
+            document.getElementById("footer-container").innerHTML = html;
+            const yearSpan = document.getElementById("year");
+            if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+          });
+
+        fetch("sidebar.html")
+          .then(res => res.text())
+          .then(html => {
+            document.getElementById("sidebar-container").innerHTML = html;
+          });
+
+        // Initialize DataTable
+        const table = $("#supplierTable").DataTable({
+          dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+          buttons: [
+            { extend: "copy", className: "btn btn-sm" },
+            { extend: "csv", className: "btn btn-sm" },
+            { extend: "excel", className: "btn btn-sm" },
+            { extend: "pdf", className: "btn btn-sm" },
+            { extend: "print", className: "btn btn-sm" },
+          ],
+            order: []  
+        });
+
+        // Fetch supplier data
+        fetch(`${BASEURL}Supplier`)
+          .then(res => res.json())
+          .then(data => {
+            const suppliers = Array.isArray(data) ? data : data.Supplier || [];
+            console.log(suppliers);
+            suppliers.forEach(supplier => {
+              table.row.add([
+                supplier.code || "",
+                supplier.name || "",
+                supplier.email || "",
+                supplier.contact || "",
+                supplier.cnic || "-",
+                supplier.status || "",
+                `
+                  <div class="d-flex gap-2">
+                    <a href="edit-Supplier.html?id=${supplier.id}" class="btn btn-sm">
+                      <i class="fas fa-edit text-primary"></i>
+                    </a>
+               
+                  </div>
+                `
+              ]);
+            });
+            table.draw();
+            attachDeleteHandlers();
+          });
+
+        // Attach delete event
+        function attachDeleteHandlers() {
+          document.querySelectorAll(".delete-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+              const supplierId = this.getAttribute("data-id");
+              document.getElementById("confirmDelete").setAttribute("data-id", supplierId);
+            });
+          });
+        }
+
+        // Confirm delete
+        document.getElementById("confirmDelete").addEventListener("click", function () {
+          const supplierId = this.getAttribute("data-id");
+          fetch(`${BASEURL}Supplier/${supplierId}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" }
+          })
+          .then(res => {
+            if (res.ok) {
+              location.reload();
+            } else {
+                localStorage.setItem('globalAlertMessage', 'Failed to delete supplier.');
+localStorage.setItem('globalAlertType', 'danger');
+            
+            }
+          })
+          .catch(error => console.error("Delete error:", error));
+        });
+      });
+    </script>
+  </body>
+</html>

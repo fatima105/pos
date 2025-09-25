@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Product</title>
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <div id="sidebar-container"></div>
+      <div class="content-container">
+        <div class="container-fluid bg-gray">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Edit Product</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="products.html" class="text-primary text-decoration-none">Product</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">
+                  Edit
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <div style="margin-top:10px;" class="d-flex justify-content-center">
+            <div class="card py-3 px-3 shadow-lg bg-white" style="width: 80%; max-width: 500px">
+              <form id="ProductUpdate">
+                <input id="ProductId" value="" type="hidden" />
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Product Name <span class="text-danger">*</span></label>
+                  <input id="name" type="text" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Retail Price <span class="text-danger">*</span></label>
+                  <input id="retail_price" type="text" class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Parent Category <span class="text-danger">*</span></label>
+                  <select id="category_id" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Sub Category <span class="text-danger">*</span></label>
+                  <select id="sub_category_id" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Product Unit <span class="text-danger">*</span></label>
+                  <select id="unit_id" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">SKU <span class="text-danger">*</span></label>
+                  <input id="SKU" type="text" readonly class="form-control" required />
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Product Description <span class="text-danger">*</span></label>
+                  <textarea id="description" rows="4" class="form-control" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Tax <span class="text-danger">*</span></label>
+                  <select id="tax" class="form-select">
+                    <option>Inclusive Tax</option>
+                    <option>Exclusive Tax</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Status <span class="text-danger">*</span></label>
+                  <select id="status" class="form-select">
+                    <option>Active</option>
+                    <option>Block</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Selected Category:</label>
+                  <div id="current_category_display" class="form-control bg-light"></div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Selected Subcategory:</label>
+                  <div id="current_subcategory_display" class="form-control bg-light"></div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Selected Unit:</label>
+                  <div id="current_unit_display" class="form-control bg-light"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-danger" id="ErrorModalLabel">
+              <i class="fa-solid fa-triangle-exclamation text-danger"></i> Please check your errors
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script>
+      
+
+
+
+
+
+ document.getElementById('retail_price').addEventListener('input', function () {
+    
+    this.value = this.value
+      .replace(/[^0-9.]/g, '')        // Remove all except digits and dot
+      .replace(/(\..*)\./g, '$1');    // Allow only one dot
+  });
+      document.addEventListener("DOMContentLoaded", function () {
+        const ProductId = new URLSearchParams(window.location.search).get('id');
+        document.getElementById("ProductId").value = ProductId;
+
+        let allCategories = [], allUnits = [], allSubCategories = [];
+
+        fetch(BASEURL + 'Category')
+          .then(res => res.json())
+          .then(response => {
+            const categories = response.Category || [];
+            allCategories = categories;
+            const categorySelect = document.getElementById("category_id");
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            categories.filter(cat => cat.status === "Active").forEach(cat => {
+              categorySelect.add(new Option(cat.name, cat.id));
+            });
+          });
+
+        fetch(BASEURL + 'Unit')
+          .then(res => res.json())
+          .then(response => {
+            const units = response.Unit || [];
+            allUnits = units;
+            const unitSelect = document.getElementById("unit_id");
+            unitSelect.innerHTML = '<option value="">Select Unit</option>';
+            units.filter(u => u.status === "Active").forEach(u => {
+              unitSelect.add(new Option(u.name, u.id));
+            });
+          });
+
+        document.getElementById("category_id").addEventListener("change", function () {
+          const categoryId = this.value;
+          const category = allCategories.find(cat => cat.id == categoryId);
+          document.getElementById("current_category_display").textContent = category ? category.name : "";
+
+          fetch(`${BASEURL}SubCategory/GetSub/${categoryId}`)
+            .then(res => res.json())
+            .then(response => {
+              const subCategories = response.SubCategory || [];
+              allSubCategories = subCategories;
+              const subCategorySelect = document.getElementById("sub_category_id");
+              subCategorySelect.innerHTML = '<option value="">Select Subcategory</option>';
+              subCategories.filter(sub => sub.status === "Active").forEach(sub => {
+                subCategorySelect.add(new Option(sub.name, sub.id));
+              });
+            });
+        });
+
+        document.getElementById("sub_category_id").addEventListener("change", function () {
+          const sub = allSubCategories.find(s => s.id == this.value);
+          document.getElementById("current_subcategory_display").textContent = sub ? sub.name : "";
+        });
+
+        document.getElementById("unit_id").addEventListener("change", function () {
+          const unit = allUnits.find(u => u.id == this.value);
+          document.getElementById("current_unit_display").textContent = unit ? unit.name : "";
+        });
+
+        if (ProductId) {
+          fetch(`${BASEURL}Product/${ProductId}`)
+            .then(res => res.json())
+            .then(data => {
+              document.getElementById("name").value = data.name || "";
+              document.getElementById("retail_price").value = data.retail_price || "";
+              document.getElementById("description").value = data.description || "";
+              document.getElementById("SKU").value = data.SKU || "";
+              document.getElementById("tax").value = data.tax || "Inclusive Tax";
+              document.getElementById("status").value = data.status || "Active";
+
+              setTimeout(() => {
+                document.getElementById("category_id").value = data.category_id;
+                document.getElementById("unit_id").value = data.unit_id;
+                document.getElementById("unit_id").dispatchEvent(new Event("change"));
+                document.getElementById("category_id").dispatchEvent(new Event("change"));
+
+                setTimeout(() => {
+                  document.getElementById("sub_category_id").value = data.sub_category_id;
+                  document.getElementById("sub_category_id").dispatchEvent(new Event("change"));
+                }, 500);
+              }, 500);
+            });
+        }
+
+        document.getElementById("ProductUpdate").addEventListener("submit", function (e) {
+          e.preventDefault();
+          const payload = {
+            id: ProductId,
+            name: document.getElementById("name").value.trim(),
+            description: document.getElementById("description").value.trim(),
+            status: document.getElementById("status").value,
+            retail_price: document.getElementById("retail_price").value.trim(),
+            SKU: document.getElementById("SKU").value.trim(),
+            tax: document.getElementById("tax").value,
+            category_id: document.getElementById("category_id").value,
+            sub_category_id: document.getElementById("sub_category_id").value,
+            unit_id: document.getElementById("unit_id").value
+          };
+
+          if (!payload.name || !payload.description || !payload.retail_price || !payload.category_id || !payload.unit_id || !payload.sub_category_id) {
+            new bootstrap.Modal(document.getElementById("ErrorModal")).show();
+            return;
+          }
+
+          fetch(`${BASEURL}Product`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.status === "success") {
+                localStorage.setItem('globalAlertMessage', "Product Data Updated");
+                localStorage.setItem('globalAlertType', 'success');
+                window.location.href = "products.html";
+              } else {
+                localStorage.setItem('globalAlertMessage', "Product Not Updated");
+                localStorage.setItem('globalAlertType', 'danger');
+              }
+            })
+            .catch(err => {
+              console.error("Update Error:", err);
+              localStorage.setItem('globalAlertMessage', "Failed to Update Product");
+              localStorage.setItem('globalAlertType', 'danger');
+            });
+        });
+      });
+    </script>
+  </body>
+</html>

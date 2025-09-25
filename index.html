@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electron Bootstrap Sidebar</title>
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Bootstrap CSS -->
+   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="scripts/style.css">
+</head>
+<body>
+  
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div id="sidebar-container"></div>
+
+        <!-- Content Area -->
+        <div class="content-container">
+            <div class="container-fluid bg-light py-3 ">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Dashboard v3</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item">
+                                <a href="#" class="text-primary text-decoration-none">Home</a>
+                            </li>
+                            <li class="breadcrumb-item active text-muted" aria-current="page">Dashboard v3</li>
+                        </ol>
+                    </nav>
+                </div>
+         
+            
+
+            <!-- Stats Cards -->
+            <div class="row">
+                <div class="col-md-6 col-lg-6 mb-3">
+                    <div class="card bg-success text-white p-3">
+                        <h5 id="purchase_stock_range">0</h5>
+                        <p>Total Stock</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-6 mb-3">
+                    <div class="card bg-primary text-white p-3">
+                      <h5 id="total-products">0</h5>
+                        <p>Total Products</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-6 mb-3">
+                    <div class="card bg-warning text-dark p-3">
+                  <h5 id="total-suppliers">0</h5>
+                        <p>Suppliers</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-6 mb-3">
+                    <div class="card bg-danger text-white p-3">
+                        <h5 id="total-customers">0</h5>
+                        <p>Registered Customers</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts and Data -->
+            <div class="row">
+                <div class="col-lg-6 mb-3">
+                    <div class="card p-3">
+                        <h5>Online Store Visitors</h5>
+                        <p>Visitors Over Time</p>
+                        <canvas id="visitorsChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-3">
+                    <div class="card p-3">
+                        <h5>Sales</h5>
+                        <p>Sales Over Time</p>
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Table -->
+            <div class="card p-3 mt-3">
+                <h5>Products</h5>
+                <table class="table table-bordered mt-2">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Some Product</td>
+                            <td>PKR 13 USD</td>
+                            <td>12,000 Sold</td>
+                        </tr>
+                        <tr>
+                            <td>Another Product</td>
+                            <td>PKR 29 USD</td>
+                            <td>123,234 Sold</td>
+                        </tr>
+                        <tr>
+                            <td>Amazing Product</td>
+                            <td>PKR 1,230 USD</td>
+                            <td>198 Sold</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+            <!-- Footer -->
+            <div id="footer-container"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+       <script src="config.js"></script>
+    <script src="scripts/scripts.js"></script>
+
+ <script>
+ 
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // Fetch counts for dashboard
+    fetch(`${BASEURL}purchaseReturnRoutes/count`)
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("total-products").textContent = data.products;
+        document.getElementById("total-customers").textContent = data.customers;
+        document.getElementById("total-suppliers").textContent = data.suppliers;
+      document.getElementById("purchase_stock_range").textContent = 
+  Number(data.purchase_stock_range).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+    
+      })
+      .catch(error => console.error("Error fetching dashboard data:", error));
+
+    // Load Footer
+    fetch("scripts/footer.html")
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById("footer-container").innerHTML = data;
+        document.getElementById("year").textContent = new Date().getFullYear();
+      })
+      .catch(error => console.error("Error loading footer:", error));
+
+    // Load Sidebar
+    fetch("sidebar.html")
+      .then(response => response.text())
+      .then(html => document.getElementById("sidebar-container").innerHTML = html);
+  });
+</script>
+
+</body>
+</html>

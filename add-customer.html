@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Customer</title>
+
+    <!-- Bootstrap CSS -->
+   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray ">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Add Customer</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="view-customers.html" class="text-primary text-decoration-none"
+                    >Customer</a
+                  >
+                </li>
+                <li
+                  class="breadcrumb-item active text-muted"
+                  aria-current="page"
+                >
+                  Add
+                </li>
+              </ol>
+            </nav>
+          </div>
+    <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <div style="margin-top:10px;"class="d-flex justify-content-center  ">
+            <div
+              class="card px-2 shadow-lg bg-white"
+              style="width: 80%; max-width: 500px"
+            >
+           <div class="card-body p-4">
+                 
+                    </div>       <form id="CustomerAdd" novalidate>
+                            <div class="row">
+                                <!-- Name Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label fw-bold">
+                                        Name <span class="text-danger fw-bold">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="name" 
+                                            name="name"
+                                            type="text" 
+                                            class="form-control" 
+                                            placeholder="Enter customer name"
+                                            required 
+                                        />
+                                        <i class="fas fa-exclamation-circle error-icon d-none"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please enter Customer name</div>
+                                </div>
+
+                                <!-- Company Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="company" class="form-label fw-bold">Company</label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="company" 
+                                            name="company"
+                                            type="text" 
+                                            class="form-control" 
+                                            placeholder="Enter company name"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- CNIC Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="cnic" class="form-label fw-bold">
+                                        CNIC <span class="text-danger fw-bold">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="cnic" 
+                                            name="cnic"
+                                            type="text" 
+                                            class="form-control" 
+                                            placeholder="12345-6789012-3"
+                                            pattern="[0-9]{5}-[0-9]{7}-[0-9]{1}"
+                                            maxlength="15"
+                                            required 
+                                        />
+                                        <i class="fas fa-exclamation-circle error-icon d-none"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please enter valid CNIC</div>
+                                </div>
+
+                                <!-- Email Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label fw-bold">
+                                        Email <span class="text-danger fw-bold">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="email" 
+                                            name="email"
+                                            type="email" 
+                                            class="form-control" 
+                                            placeholder="Enter email address"
+                                            required 
+                                        />
+                                        <i class="fas fa-exclamation-circle error-icon d-none"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please enter email</div>
+                                </div>
+
+                                <!-- Mobile Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="mobile" class="form-label fw-bold">
+                                        Mobile <span class="text-danger fw-bold">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="mobile" 
+                                            name="mobile"
+                                            type="tel" 
+                                            class="form-control" 
+                                            placeholder="0300-1234567"
+                                            pattern="[0-9]{4}-[0-9]{7}"
+                                            maxlength="12"
+                                            required 
+                                        />
+                                        <i class="fas fa-exclamation-circle error-icon d-none"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please enter mobile number</div>
+                                </div>
+
+                                <!-- Land Line Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="land_line" class="form-label fw-bold">Land Line</label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="land_line" 
+                                            name="land_line"
+                                            type="tel" 
+                                            class="form-control" 
+                                            placeholder="042-12345678"
+                                            pattern="[0-9]{3}-[0-9]{8}"
+                                            maxlength="12"
+                                        />
+                                    </div>
+                                </div>
+
+                                <!-- City Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="city" class="form-label fw-bold">
+                                        City <span class="text-danger fw-bold">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="city" 
+                                            name="city"
+                                            type="text" 
+                                            class="form-control" 
+                                            placeholder="Enter city name"
+                                            required 
+                                        />
+                                        <i class="fas fa-exclamation-circle error-icon d-none"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please enter City</div>
+                                </div>
+
+                                <!-- Status Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="status" class="form-label fw-bold">
+                                        Status <span class="text-danger fw-bold">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <select 
+                                            id="status" 
+                                            name="status"
+                                            class="form-select" 
+                                            required
+                                        >
+                                            <option value="">Select Status</option>
+                                            <option value="Active" selected>Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                        <i class="fas fa-exclamation-circle error-icon d-none"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please select status</div>
+                                </div>
+
+                                <!-- Credit Limit Field -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="credit_limit" class="form-label fw-bold">
+                                        Credit Limit <span class="text-danger fw-bold">*</span>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input 
+                                            id="credit_limit" 
+                                            name="credit_limit"
+                                            type="number" 
+                                            class="form-control" 
+                                            placeholder="Enter credit limit"
+                                            min="0"
+                                            step="1"
+                                            required 
+                                        />
+                                        <i class="fas fa-exclamation-circle error-icon d-none"></i>
+                                    </div>
+                                    <div class="invalid-feedback">Please enter Credit Limit</div>
+                                </div>
+                            </div>
+                        </form>
+                    
+                    <div class="card-footer bg-grey d-flex justify-content-left">
+                   
+                        <button type="submit" form="CustomerAdd" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Submit
+                        </button>
+                    </div>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+     
+      </div>
+    </div>
+ <!-- Error Modal -->
+<div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger" id="ErrorModalLabel">
+          <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+          Please check your errors
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+   
+    <!-- Bootstrap JS -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+ <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/scripts.js"></script>
+     <script src="config.js"></script>
+    <script>
+        document.getElementById('CustomerAdd').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Clear previous validation
+            clearValidation();
+            
+            let isValid = true;
+            const form = this;
+            
+            // Validate required fields
+            const requiredFields = ['name', 'cnic', 'email', 'mobile', 'city', 'status', 'credit_limit'];
+            
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                const value = field.value.trim();
+                
+                if (!value) {
+                    showError(field, `Please enter ${fieldId.replace('_', ' ')}`);
+                    isValid = false;
+                }
+            });
+            
+            // Validate email format
+            const email = document.getElementById('email');
+            if (email.value && !isValidEmail(email.value)) {
+                showError(email, 'Please enter a valid email address');
+                isValid = false;
+            }
+            
+            // Validate CNIC format
+            const cnic = document.getElementById('cnic');
+            if (cnic.value && !isValidCNIC(cnic.value)) {
+                showError(cnic, 'Please enter valid CNIC format (12345-6789012-3)');
+                isValid = false;
+            }
+            
+            // Validate mobile format
+            const mobile = document.getElementById('mobile');
+            if (mobile.value && !isValidMobile(mobile.value)) {
+                showError(mobile, 'Please enter valid mobile format (0300-1234567)');
+                isValid = false;
+            }
+            
+            if (isValid) {
+                // Form is valid, submit data
+                submitForm();
+            }
+        });
+        
+        function showError(field, message) {
+            field.classList.add('is-invalid');
+            const icon = field.parentElement.querySelector('.error-icon');
+            const feedback = field.parentElement.parentElement.querySelector('.invalid-feedback');
+            
+            if (icon) icon.classList.remove('d-none');
+            if (feedback) feedback.textContent = message;
+        }
+        
+        function clearValidation() {
+            const invalidFields = document.querySelectorAll('.is-invalid');
+            const errorIcons = document.querySelectorAll('.error-icon');
+            
+            invalidFields.forEach(field => field.classList.remove('is-invalid'));
+            errorIcons.forEach(icon => icon.classList.add('d-none'));
+        }
+        
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+        
+        function isValidCNIC(cnic) {
+            const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
+            return cnicRegex.test(cnic);
+        }
+        
+        function isValidMobile(mobile) {
+            const mobileRegex = /^\d{4}-\d{7}$/;
+            return mobileRegex.test(mobile);
+        }
+        
+        function submitForm() {
+            const formData = new FormData(document.getElementById('CustomerAdd'));
+            const customerData = Object.fromEntries(formData);
+            
+            console.log('Customer Data:', customerData);
+            
+         
+        
+            fetch(`${BASEURL}Customer`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(customerData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                localStorage.setItem('globalAlertMessage','Customer Added Successfully!');
+localStorage.setItem('globalAlertType', 'success');
+           
+                document.getElementById('CustomerAdd').reset();
+                   window.location.href = "view-customers.html"; // change to your target page
+            })
+            .catch(error => {
+                localStorage.setItem('globalAlertMessage','Error Adding Customer!');
+localStorage.setItem('globalAlertType', 'error');
+        window.location.href = "view-customers.html"; // change to your target page
+            });
+        
+        }
+        
+        // Auto-format CNIC input
+        document.getElementById('cnic').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 5) {
+                value = value.substring(0, 5) + '-' + value.substring(5);
+            }
+            if (value.length >= 13) {
+                value = value.substring(0, 13) + '-' + value.substring(13, 14);
+            }
+            e.target.value = value;
+        });
+        
+        // Auto-format mobile input
+        document.getElementById('mobile').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 4) {
+                value = value.substring(0, 4) + '-' + value.substring(4, 11);
+            }
+            e.target.value = value;
+        });
+        
+        // Auto-format land line input
+        document.getElementById('land_line').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 3) {
+                value = value.substring(0, 3) + '-' + value.substring(3, 11);
+            }
+            e.target.value = value;
+        });
+ 
+          // Load Footer
+
+          // Load Sidebar
+          fetch("sidebar.html")
+            .then((response) => response.text())
+            .then(
+              (html) =>
+                (document.getElementById("sidebar-container").innerHTML = html)
+            );
+    
+  </script>
+      
+  </body>
+</html>

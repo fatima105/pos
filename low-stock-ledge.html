@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Low Stock Products</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+
+    <style>
+      .low-stock {
+        background-color: #ffe5e5 !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Low Stock Products</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">
+                  Low Stock Products
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <div
+            id="alertPlaceholder"
+            class="position-fixed top-0 start-50 translate-middle-x mt-4"
+            style="z-index: 1055; width: 400px; max-width: 90%"
+          ></div>
+
+          <div class="card shadow-lg mt-5">
+            <div class="container mt-4 mb-4">
+              <div class="d-flex justify-content-end mb-3">
+                <button
+                  id="downloadPdf"
+                  class="btn btn-danger btn-sm d-flex align-items-center"
+                >
+                  <i class="fas fa-file-pdf fa-2x me-2"></i>
+                </button>
+              </div>
+              <hr class="mt-2" />
+
+              <!-- Product Table -->
+              <div class="table-responsive">
+                <table
+                  id="lowStockTable"
+                  class="table table-striped table-bordered mt-4"
+                >
+                  <thead class="table-light text-dark text-center">
+                    <tr>
+                      <th>#</th>
+                      <th>Product Name</th>
+                      <th>Category</th>
+                      <th>Sub Category</th>
+                      <th>Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-center"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- JS Libraries -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/jquery.dataTables.min.js"></script>
+    <script src="scripts/dataTables.buttons.min.js"></script>
+    <script src="scripts/jszip.min.js"></script>
+    <script src="scripts/pdfmake.min.js"></script>
+    <script src="scripts/vfs_fonts.js"></script>
+    <script src="scripts/buttons.html5.min.js"></script>
+    <script src="scripts/buttons.print.min.js"></script>
+
+    <!-- ✅ Add jsPDF + AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <script src="config.js"></script>
+
+    <script>
+document.getElementById("downloadPdf").addEventListener("click", function () {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  // Left side: Company Name in Bold
+  doc.setFontSize(14);
+  doc.setFont(undefined, "bold");
+  doc.text("ALIMART", margin, 12);
+
+  // Right side: Report Title Bold
+  const reportTitle = "Report: Low Stock";
+  doc.setFontSize(14);
+  doc.setFont(undefined, "bold");
+  const reportWidth = doc.getTextWidth(reportTitle);
+  doc.text(reportTitle, pageWidth - margin - reportWidth, 12);
+
+  // Add AutoTable with HTML table
+  doc.autoTable({
+    html: "#lowStockTable",
+    startY: 20,
+    theme: "grid",
+    headStyles: { fillColor: [220, 53, 69] }, // Bootstrap red
+  });
+
+// Add "Prepared By" / "Approved By" section
+const finalY = doc.lastAutoTable.finalY || 30; // last table Y position
+const lineWidth = 70;
+const spaceBetween = 50;
+const startX = margin;
+
+doc.setFontSize(12);
+
+// Prepared By
+doc.setFont(undefined, "bold");
+doc.text("Prepared By:", startX, finalY + 25); // label higher
+doc.setFont(undefined, "normal");
+doc.setLineWidth(0.5);
+doc.line(startX, finalY + 32, startX + lineWidth, finalY + 32); // line pushed down
+
+// Approved By
+const approvedX = startX + lineWidth + spaceBetween;
+doc.setFont(undefined, "bold");
+doc.text("Approved By:", approvedX, finalY + 25); // label higher
+doc.setFont(undefined, "normal");
+doc.line(approvedX, finalY + 32, approvedX + lineWidth, finalY + 32); // line pushed down
+
+
+  // Optional: Add dotted lines or underline effect
+  // doc.setLineDash([1, 2]); // for dotted line
+
+  // Save PDF
+  doc.save("Low_Stock_Report.pdf");
+});
+      // Load Sidebar
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => {
+          document.getElementById("sidebar-container").innerHTML = html;
+        });
+
+      $(document).ready(function () {
+        // Fetch Low Stock Products
+        fetch(`${BASEURL}Reports/lowstockproduct`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (!data.report || data.report.length === 0) {
+              $("#lowStockTable tbody").html(
+                `<tr><td colspan="5">No low stock products found.</td></tr>`
+              );
+              return;
+            }
+
+            let rows = "";
+            data.report.forEach((p, i) => {
+              rows += `
+                <tr class="${p.lowStock ? "low-stock" : ""}">
+                  <td>${i + 1}</td>
+                  <td>${p.product_name}</td>
+                  <td>${p.category || "N/A"}</td>
+                  <td>${p.sub_category || "N/A"}</td>
+                  <td>
+                    <span class="badge bg-${p.lowStock ? "danger" : "success"}">
+                      ${p.total_stock} stock
+                    </span>
+                  </td>
+                </tr>
+              `;
+            });
+
+            $("#lowStockTable tbody").html(rows);
+
+            // Initialize DataTable
+            $("#lowStockTable").DataTable({
+              dom: "frtip", // no buttons
+              searching: false,
+              paging: true,
+              ordering: true,
+              order: [[4, "asc"]], // sort by stock
+            });
+          })
+          .catch((err) => {
+            console.error("❌ Error loading products:", err);
+            $("#lowStockTable tbody").html(
+              `<tr><td colspan="5">Failed to load products</td></tr>`
+            );
+          });
+      });
+    </script>
+  </body>
+</html>

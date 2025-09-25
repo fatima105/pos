@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Expense Ledger</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS Dependencies -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link href="scripts/select2.min.css" rel="stylesheet" />
+  <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+  <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .main-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    #sidebar-container a {
+      color: #fff;
+      text-decoration: none;
+      display: block;
+      padding: 8px 0;
+    }
+
+    #sidebar-container a:hover {
+      text-decoration: none;
+    }
+
+    .content-container {
+      flex: 1;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+
+    .bg-buttons {
+      background-color: #6c757d;
+      color: #e9ecef;
+    }
+
+    .bg-buttons .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="content-container">
+      <h3 class="mb-4">Expense Ledger</h3>
+      <div id="alertPlaceholder"></div>
+
+      <div class="row mb-3">
+        <div class="col-md-12 mb-3">
+          <label for="branch" class="form-label fw-bold">
+            Branch <span class="text-danger">*</span>
+          </label>
+          <input type="text" value="Peshawar" class="form-control" readonly />
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label for="fromDate" class="form-label fw-bold">
+            From Date <span class="text-danger">*</span>
+          </label>
+          <input type="date" id="fromDate" class="form-control" />
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label for="toDate" class="form-label fw-bold">
+            To Date <span class="text-danger">*</span>
+          </label>
+          <input type="date" id="toDate" class="form-control" />
+        </div>
+
+        <div class="col-md-6 d-flex align-items-end mb-3">
+          <button id="getReportBtn" class="btn btn-danger w-100">
+            Get Report
+          </button>
+        </div>
+      </div>
+
+      <div id="ExpenseLedger"></div>
+    </div>
+  </div>
+
+  <!-- JS Dependencies -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/select2.min.js"></script>
+  <script src="scripts/jquery.dataTables.min.js"></script>
+  <script src="scripts/dataTables.buttons.min.js"></script>
+  <script src="scripts/jszip.min.js"></script>
+  <script src="scripts/pdfmake.min.js"></script>
+  <script src="scripts/vfs_fonts.js"></script>
+  <script src="scripts/buttons.html5.min.js"></script>
+  <script src="scripts/buttons.print.min.js"></script>
+  <script src="config.js"></script>
+
+  <script>
+  // Inline alert utility
+function showInlineAlert(message, type = 'info') {
+  const alertPlaceholder = document.getElementById('alertPlaceholder');
+  const alertHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  alertPlaceholder.innerHTML = alertHTML;
+
+  setTimeout(() => {
+    const alert = alertPlaceholder.querySelector('.alert');
+    if (alert) alert.classList.remove('show');
+  }, 5000);
+}
+
+// Set max date to today
+const today = new Date().toISOString().split("T")[0];
+document.getElementById("fromDate").setAttribute("max", today);
+document.getElementById("toDate").setAttribute("max", today);
+
+// Load Sidebar dynamically
+fetch("sidebar.html")
+  .then(response => response.text())
+  .then(html => {
+    document.getElementById("sidebar-container").innerHTML = html;
+  });
+
+$(document).ready(function () {
+  $("#getReportBtn").on("click", function () {
+    const startDate = $("#fromDate").val();
+    const endDate = $("#toDate").val();
+
+    if (!startDate || !endDate) {
+      showInlineAlert("Please select both start and end dates.", "warning");
+      return;
+    }
+
+    // Clear old table
+    $("#ExpenseLedger").html("");
+
+    fetch(`${BASEURL}Reports/Expense`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        start_date: startDate,
+        end_date: endDate,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.data || data.data.length === 0) {
+          showInlineAlert("No data found for the selected period.", "info");
+          return;
+        }
+
+        let html = "";
+        data.data.forEach((head, i) => {
+          html += generateTable(
+            head.ledgerRows,
+            head.opening_balance,
+            head.closing_balance,
+            i
+          );
+        });
+
+        $("#ExpenseLedger").html(html);
+
+        // Initialize DataTables for each generated table
+        data.data.forEach((_, i) => {
+          $(`#reportTable_${i}`).DataTable({
+            dom: "Bfrtip",
+       
+            order: [], // disable default ordering
+            // Handle colspan rows properly
+            createdRow: function(row, data, dataIndex) {
+              // This ensures DataTable handles special rows correctly
+              if ($(row).find('td[colspan]').length > 0) {
+                $(row).addClass('special-row');
+              }
+            }
+          });
+        });
+      })
+      .catch(err => {
+        console.error("Error fetching expense ledger:", err);
+        showInlineAlert("Failed to load Expense Ledger. Please try again.", "danger");
+      });
+  });
+});
+
+// Generate ledger table HTML
+function generateTable(entries, openingBalance, closingBalance, index) {
+  let balance = parseFloat(openingBalance) || 0;
+  let rows = "";
+
+  // Opening balance row - Fixed colspan structure
+  rows += `
+    <tr class="opening-balance-row">
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td class="text-end fw-bold">Opening Balance:</td>
+      <td class="fw-bold">${balance.toFixed(2)}</td>
+    </tr>
+  `;
+
+  // Ledger rows
+  entries.forEach((entry, idx) => {
+    const dr = parseFloat(entry.debit) || 0;
+    const cr = parseFloat(entry.credit) || 0;
+    balance += cr - dr;
+
+    rows += `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${entry.date || ""}</td>
+        <td>${entry.narration || ""}</td>
+        <td>${dr.toFixed(2)}</td>
+        <td>${cr.toFixed(2)}</td>
+        <td>${balance.toFixed(2)}</td>
+      </tr>
+    `;
+  });
+
+  // Closing balance - Fixed colspan structure
+  const finalClosing =
+    Number.isFinite(parseFloat(closingBalance)) && closingBalance !== null && closingBalance !== ""
+      ? parseFloat(closingBalance)
+      : balance;
+
+  rows += `
+    <tr class="closing-balance-row">
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td class="text-end fw-bold">Closing Balance:</td>
+      <td class="fw-bold">${finalClosing.toFixed(2)}</td>
+    </tr>
+  `;
+
+  return `
+    <table id="reportTable_${index}" class="table table-bordered table-striped mt-4">
+      <thead class="table-dark">
+        <tr>
+          <th>Sr.</th>
+          <th>Date</th>
+          <th>Narration</th>
+          <th>Dr.</th>
+          <th>Cr.</th>
+          <th>Balance</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+  </script>
+</body>
+</html>

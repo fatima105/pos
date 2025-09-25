@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sidebar</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+
+  <style>
+    .nav-link.active {
+      background-color: #007bff !important;
+      color: white !important;
+      font-weight: bold;
+    }
+    .nav .nav-link.sub-active {
+      background-color: rgba(0, 123, 255, 0.2) !important;
+      font-weight: bold;
+    }
+    .nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+<div class="d-flex flex-column bg-dark flex-shrink-0 p-3 sidebar" style="min-height: 100%;">
+
+  <!-- Brand -->
+  <a href="#" class="d-flex align-items-center mb-3 text-white text-decoration-none">
+    <span class="fs-5">AdminERP</span>
+  </a>
+  <hr/>
+
+  <!-- Navigation -->
+  <ul class="nav nav-pills flex-column">
+
+  <!-- Dashboard -->
+<li class="nav-item">
+  <a href="index.html" class="nav-link text-white">
+    <i class="fa-solid fa-home me-2"></i> Dashboard
+  </a>
+</li>
+
+<!-- Master Settings -->
+<li class="nav-item">
+  <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#masterSettingsDropdown" role="button">
+    <div><i class="fa-solid fa-cog me-2"></i> Master Settings</div>
+    <i class="fa-solid fa-chevron-down"></i>
+  </a>
+  <div class="collapse" id="masterSettingsDropdown">
+    <ul class="nav flex-column ps-4">
+      <li><a href="items-import.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Items Import</a></li>
+    
+   <li><a href="items-import-report.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Items Import Report</a></li>
+    
+
+
+      <li><a href="products.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Products</a></li>
+      <li><a href="units.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Products Units</a></li>
+      <li><a href="Categories.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Categories</a></li>
+      <li><a href="SubCategories.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Sub Categories</a></li>
+      <li><a href="Tax.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Taxes</a></li>
+      <li><a href="change-password.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Change Password</a></li>
+    </ul>
+  </div>
+</li>
+
+<!-- Settings -->
+<li class="nav-item">
+  <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#settingsDropdown" role="button">
+    <div><i class="fa-solid fa-cog me-2"></i> Settings</div>
+    <i class="fa-solid fa-chevron-down"></i>
+  </a>
+  <div class="collapse" id="settingsDropdown">
+    <ul class="nav flex-column ps-4">
+      <li><a href="profile.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Profile</a></li>
+      <li><a href="change-password.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Change Password</a></li>
+    </ul>
+  </div>
+</li>
+
+<!-- Manage Accounts -->
+<li class="nav-item">
+  <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#accountsDropdown" role="button">
+    <div><i class="fa-solid fa-cog me-2"></i> Manage Accounts</div>
+    <i class="fa-solid fa-chevron-down"></i>
+  </a>
+  <div class="collapse" id="accountsDropdown">
+    <ul class="nav flex-column ps-4">
+      <li><a href="expense-voucher.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Expense Voucher</a></li>
+      <li><a href="cash-payment-voucher.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Cash Payment Voucher</a></li>
+      <li><a href="cash-received-voucher.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Cash Received Voucher</a></li>
+      <li><a href="Journal-voucher.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Journal Payment Voucher</a></li>
+    </ul>
+  </div>
+</li>
+
+<!-- Manage Purchase -->
+<li class="nav-item">
+  <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#purchaseDropdown" role="button">
+    <div><i class="fa-solid fa-truck me-2"></i> Manage Purchase</div>
+    <i class="fa-solid fa-chevron-down"></i>
+  </a>
+  <div class="collapse" id="purchaseDropdown">
+    <ul class="nav flex-column ps-4">
+      <li><a href="view-suppliers.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Suppliers</a></li>
+      <li><a href="view-purchases.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Purchases</a></li>
+      <li><a href="view-purchase-return.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Purchase Return</a></li>
+    </ul>
+  </div>
+</li>
+<li class="nav-item">
+  <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#salesDropdown" role="button">
+    <div><i class="fa-solid fa-warehouse me-2"></i> Manage Sales</div>
+    <i class="fa-solid fa-chevron-down"></i>
+  </a>
+  <div class="collapse" id="salesDropdown">
+    <ul class="nav flex-column ps-4">
+      <li><a href="sale-register.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Sale Register</a></li>
+      <li><a href="view-customers.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Customers</a></li>
+      <li><a href="view-sales.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Sales</a></li>
+      <li><a href="view-sales-returns.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Sales Returns</a></li>
+    </ul>
+  </div>
+</li>
+<!-- Manage Reports -->
+<li class="nav-item">
+  <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#reportsDropdown" role="button">
+    <div><i class="fa-solid fa-chart-line me-2"></i> Manage Reports</div>
+    <i class="fa-solid fa-chevron-down"></i>
+  </a>
+  <div class="collapse" id="reportsDropdown">
+    <ul class="nav flex-column ps-4">
+                                    <li><a href="Sale-Report.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i>Sale Report</a></li>
+                              <li><a href="Profit_Loss_Report.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i>Profit/Loss Report</a></li>
+                        <li><a href="RecieveableReport.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i>Receiveable Report</a></li>
+                  <li><a href="Payable-Report.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i>Payable Report</a></li>
+            <li><a href="low-stock-ledge.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i>Low Stock Ledger</a></li>
+      <li><a href="view-suppliers-ledge.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Supplier Ledger</a></li>
+                           <li><a href="income-statement.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Income Statment </a></li>
+                     <li><a href="view-customer-ledger.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Customer Ledger </a></li>
+            <li><a href="view-cash-flow.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Cash Flow</a></li>
+               <li><a href="view-expense-ledger.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Expense Ledger </a></li>
+    </ul>
+  </div>
+</li>
+
+<!-- Manage Sales -->
+
+
+<!-- Logout -->
+<li class="nav-item">
+  <a href="#" class="nav-link text-white" onclick="logoutFunction()">
+    <i class="fa-solid fa-sign-out me-2"></i> Logout
+  </a>
+</li>
+
+
+  </ul>
+  <hr/>
+  <div class="text-center">
+    <small>&copy; <span id="year"></span> AdminERP</small>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="scripts/jquery-3.6.0.min.js"></script>
+<script src="scripts/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Set current year
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // Set active link
+  document.addEventListener("DOMContentLoaded", function () {
+    const currentPath = window.location.pathname.split("/").pop();
+    document.querySelectorAll(".nav-link").forEach(link => {
+      const href = link.getAttribute("href");
+      if (href && href.includes(currentPath)) {
+        link.classList.add("active");
+        const parentCollapse = link.closest(".collapse");
+        if (parentCollapse) {
+          parentCollapse.classList.add("show");
+          const parentLink = parentCollapse.previousElementSibling;
+          if (parentLink) parentLink.classList.add("active");
+        }
+      }
+    });
+  });
+
+  // Logout
+  function logoutFunction() {
+    alert("Logging out...");
+    window.location.href = "logout.html";
+  }
+</script>
+
+</body>
+</html>

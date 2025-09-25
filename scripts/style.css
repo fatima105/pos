@@ -1,0 +1,80 @@
+/* Ensure full height */
+html, body {
+    min-height: 100vh; /* Full viewport height */
+    margin: 0;
+    padding: 0;
+}
+/* Force select2 box to match Bootstrap */
+.select2-container .select2-selection--single {
+  height: 38px;                /* same as .form-control */
+  padding: 6px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+#footer-container {
+  background: #f8f9fa;
+  padding: 10px;
+  text-align: center;
+  border-top: 1px solid #ddd;
+  margin-top: auto; /* pushes footer to bottom */
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+}
+/* Main layout container */
+.main-container {
+    display: flex;
+    min-height: 100vh; /* Full viewport height */
+}
+
+        /* Minimal custom styles - mostly using Bootstrap classes */
+        .error-icon {
+            color: var(--bs-danger);
+        }
+        .form-control.is-invalid {
+            padding-right: 2.5rem;
+        }
+
+  .select2-container--default .select2-selection--single {
+    height: 38px;
+    padding: 5px 12px;
+    border: 1px solid #ced4da;
+  }
+
+/* Sidebar styling */
+#sidebar-container {
+
+    width: 250px; /* Adjust sidebar width */
+    min-height: 100%;
+    background-color: #f8f9fa; /* Sidebar background */
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+}
+
+/* Main content area */
+.content-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 20px;
+}
+
+/* Footer at the bottom */
+#footer-container {
+    margin-top: auto;
+    padding: 10px;
+    width: 100%;
+
+    color: white;
+    text-align: center;
+}
+.supplier {
+  padding: 6px 10px;   /* inner spacing (top-bottom, left-right) */
+  margin: 4px 0;       /* outer spacing (top-bottom) */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}

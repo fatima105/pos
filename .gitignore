@@ -1,0 +1,8 @@
+# Git ignore rules 
+node_modules/
+api/node_modules/
+api/*.db
+api/*.log
+.env
+dist/
+build/

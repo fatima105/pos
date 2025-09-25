@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/style.css" />
+
+  <style>
+    .btn {
+      padding: 10px;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      background-color: #045f54;
+      color: #e6f7f5;
+    }
+    .bg-green {
+      background-color: #045f54;
+    }
+    .nav-icon {
+      color: #045f54;
+    }
+    .nav-icon:hover {
+      color: #e6f7f5;
+    }
+    .bg-as {
+      background-color: #6c757d;
+      color: #e9ecef;
+    }
+    .bg-as .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <div id="sidebar-container"></div>
+
+    <div class="content-container">
+      <div class="container-fluid bg-gray py-3">
+        <!-- Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between">
+          <h2 class="mb-3 mb-md-0">Sales </h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item">
+                <a href="index.html" class="text-primary text-decoration-none">Home</a>
+              </li>
+              <li class="breadcrumb-item active text-muted" aria-current="page">Sales</li>
+            </ol>
+          </nav>
+        </div>
+   <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+        <div class="row">
+          <!-- Ordered Products Table -->
+          <div class="col-md-8">
+            <div class="card shadow-lg mt-4">
+              <div class="card-header text-white" style="background-color: #045f54;">
+                Ordered Products
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                      <input name="sale_id" id="sale_id" readonly type="text" class="form-control my-3" />
+          
+                    <input name="voucher_name" id="voucher_name" readonly type="text" class="form-control my-3" />
+                  </div>
+                </div>
+
+                <table id="saleTable" class="table table-striped table-bordered mt-3">
+                  <thead class="table-light text-dark">
+                    <tr>
+                      <th>Product</th>
+                      <th>Qty</th>
+                      <th>Price</th>
+                      <th>Discount</th>
+                    
+                          <th>Purchase_Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody id="saleTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Summary -->
+          <div class="col-md-4">
+            <div class="card shadow-lg mt-4">
+              <div class="card-header text-white" style="background-color: #045f54;">
+                TOTAL: <span id="totalAmount"></span>
+              </div>
+              <div class="card-body" style="background-color: #6c757d;">
+                <div class="mb-3">
+                  <label for="customer" class="form-label text-white">Customer</label>
+                       <input type="hidden"  required id="customer_id" value="" class="form-control-plaintext text-dark bg-light rounded px-2" readonly />
+               
+                  <input type="text" id="customer" value="" class="form-control-plaintext text-dark bg-light rounded px-2" readonly />
+                </div>
+
+                <div class="mb-3">
+                  <label for="notes" class="form-label text-white">Notes</label>
+                  <input type="text" id="notes" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label text-white">Payment Method</label>
+                  <div class="d-flex gap-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
+                      <label class="form-check-label text-white" for="cashPayment">💵 Cash</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="paymentMethod" id="creditPayment" value="credit" checked>
+                      <label class="form-check-label text-white" for="creditPayment">💳 Credit</label>
+                    </div>
+
+
+
+                  </div>
+                </div>
+
+
+                     <div class="mb-3">
+                  <label for="paymentSpan" class="form-label text-white">Payment</label>
+                  <input type="number" id="" class="form-control" value=""  readonly />
+                </div>
+                <div class="mb-3">
+                 
+                <label for="discountSpan" class="form-label text-white">Discount</label>
+                  <input type="number" id="discountSpan" class="form-control" value="0" step="0.01" readonly />
+                </div>
+
+                <div class="text-end">
+                  <button type="button" class="btn btn-primary px-5" id="save-payment-btn">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div> <!-- End Row -->
+      </div> <!-- End Container -->
+
+      <div id="footer-container"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/jquery.dataTables.min.js"></script>
+  <script src="scripts/dataTables.buttons.min.js"></script>
+  <script src="scripts/jszip.min.js"></script>
+  <script src="scripts/pdfmake.min.js"></script>
+  <script src="scripts/vfs_fonts.js"></script>
+  <script src="scripts/buttons.html5.min.js"></script>
+  <script src="scripts/buttons.print.min.js"></script>
+  <script src="config.js"></script>
+
+<script>
+  function showInlineAlert(message, type = 'info') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    alertPlaceholder.innerHTML = alertHTML;
+
+    setTimeout(() => {
+      const alert = alertPlaceholder.querySelector('.alert');
+      if (alert) alert.classList.remove('show');
+    }, 5000);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    fetch("scripts/footer.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("footer-container").innerHTML = data;
+      });
+
+    fetch("sidebar.html")
+      .then(res => res.text())
+      .then(data => {
+        document.getElementById("sidebar-container").innerHTML = data;
+      });
+
+    loadSales();
+  });
+
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+function updateOverallTotal() {
+  let total = 0;
+  const rows = document.querySelectorAll('#saleTableBody tr');
+
+  rows.forEach(row => {
+    const qty = parseFloat(row.querySelector('.qty-input')?.value) || 0;
+    const retail = parseFloat(row.querySelector('.retail-input')?.value) || 0;
+    const discount = parseFloat(row.querySelector('.discount-input')?.value) || 0;
+
+    const rowTotal = (qty * retail) - discount;
+    total += rowTotal;
+  });
+
+  document.getElementById('totalAmount').textContent = total.toFixed(2);
+}
+
+  let saleId = getQueryParam('id');
+  let sale_date = '';
+function CheckQuantity(input) {
+  const row = input.closest('tr');
+  const quantity = parseFloat(input.value) || 0;
+  const retail = parseFloat(row.querySelector('.retail-input')?.value) || 0;
+  const discount = parseFloat(row.querySelector('.discount-input')?.value) || 0;
+
+  const totalCell = row.querySelector('td:last-child');
+  const rowTotal = (quantity * retail) - discount;
+  totalCell.textContent = rowTotal.toFixed(2);
+
+  updateOverallTotal();
+}
+
+  async function loadSales() {
+    try {
+      const response = await fetch(`${BASEURL}Sale/SpecificDetails/` + saleId);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      console.log(data);
+
+      sale_date = data.sale_date;
+       document.getElementById("sale_id").value = data.sale_id || '';
+      document.getElementById("voucher_name").value = data.invoice_no || '';
+      document.getElementById("customer").value = data.customer_name || '';
+      document.getElementById("customer_id").value = data.customer_id;
+      document.getElementById("discountSpan").value = parseFloat(data.total_discount || 0).toFixed(2);
+      document.getElementById("totalAmount").innerText = data.amount;
+  // <td>${item.adjusted_net_amount}</td>
+      const tbody = document.getElementById("saleTableBody");
+      tbody.innerHTML = "";
+
+      if (data.products && data.products.length > 0) {
+        const filteredProducts = data.products.filter(item => (item.quantity - item.returned_quantity) > 0);
+
+        if (filteredProducts.length > 0) {
+          filteredProducts.forEach((item) => {
+            const maxReturnQty = item.quantity - item.returned_quantity;
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>
+                ${item.product_name}
+                <input type="hidden" class="product-id" value="${item.product_id}" />
+              </td>
+              <td><input type="number" onchange="CheckQuantity(this)" class="form-control qty-input" min="1" max="${maxReturnQty}" value="${maxReturnQty}" data-product-id="${item.product_id}" /></td>
+              <td><input type="number" readonly class="form-control retail-input" value="${item.retail}" /></td>
+              <td><input type="number" readonly class="form-control discount-input" value="${item.discount}" /></td>
+            
+                  <td>${item.purchase_amount}</td>
+            `;
+            tbody.appendChild(row);
+          });
+
+          $('#saleTable').DataTable({
+            responsive: true,
+            destroy: true,
+            dom: '<"d-flex justify-content-between align-items-center flex-wrap mb-2"<"bg-buttons"B>f>rtip',
+            buttons: [
+              { extend: 'copy', className: 'btn btn-sm' },
+              { extend: 'csv', className: 'btn btn-sm' },
+              { extend: 'excel', className: 'btn btn-sm' },
+              { extend: 'pdf', className: 'btn btn-sm' },
+              { extend: 'print', className: 'btn btn-sm' }
+            ]
+          });
+        } else {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">All products already returned</td></tr>`;
+        }
+      } else {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center">No products found</td></tr>`;
+        document.getElementById("save-payment-btn").disabled = true;
+      }
+    } catch (error) {
+      console.error("Error fetching Sale data:", error);
+    }
+  }
+
+  document.getElementById("save-payment-btn").addEventListener("click", async function () {
+    const customerId = document.getElementById("customer_id").value;
+    const voucherNo = document.getElementById("voucher_name").value;
+    const totalAmount = document.getElementById("totalAmount").innerText;
+    const notes = document.getElementById("notes").value;
+    const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "cash";
+const customer=document.getElementById('customer').value;
+    const now = new Date();
+    const currentDate = now.toISOString().split("T")[0];
+    const currentTime = now.toISOString();
+
+    const rows = document.querySelectorAll("#saleTableBody tr");
+    const products = [];
+
+    rows.forEach(row => {
+      const productId = row.querySelector(".product-id")?.value;
+      const quantity = parseFloat(row.querySelector(".qty-input")?.value || 0);
+      const retail = parseFloat(row.querySelector(".retail-input")?.value || 0);
+      const discount = parseFloat(row.querySelector(".discount-input")?.value || 0);
+
+      if (productId && quantity > 0) {
+        products.push({
+          product_id: productId,
+          quantity,
+          retail,
+          discount
+        });
+      }
+    });
+
+    if (products.length === 0) {
+      showInlineAlert("Cannot perform sale return. No valid products found in table.", "danger");
+      return;
+    }
+
+    const payload = {
+      sale_id: saleId,
+      sale_date: sale_date,
+      customer_id: customerId,
+      user_id: '1',
+      voucher_no: voucherNo,
+      sale_return_date: currentDate,
+      amount: totalAmount,
+      location_id: '1',
+      created_at: currentTime,
+      updated_at: currentTime,
+      customer:customer,
+      products: products
+    };
+
+    console.log(payload);
+
+    try {
+      const response = await fetch(`${BASEURL}SaleReturn`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+      const result = await response.json();
+      localStorage.setItem('globalAlertMessage', "Sale Return Done successfully");
+      localStorage.setItem('globalAlertType', 'success');
+      window.location.href = 'view-sales-returns.html';
+    } catch (err) {
+      console.error("Save failed:", err);
+      showInlineAlert(`Failed To Complete Sale Return`, `danger`);
+    }
+  });
+</script>
+
+</body>
+</html>

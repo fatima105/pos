@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sale Return Details</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+
+    <style>
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+        border: none !important;
+        box-shadow: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Sale Return Details</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="view-sales-returns.html" class="text-primary text-decoration-none">Sale Return</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">Sale Return Details</li>
+              </ol>
+            </nav>
+          </div>
+
+          <div class="card shadow-lg mt-5">
+            <div class="container mt-4 mb-4">
+              <div class="row">
+                <!-- Left Side -->
+                <div class="col-md-6 col-sm-6">
+                  <p><strong>Voucher:</strong> <span class="ms-2" id="voucher_no"></span></p>
+                  <p><strong>Sale Date:</strong> <span class="ms-2" id="sale_date"></span></p>
+                </div>
+                <!-- Right Side -->
+                <div class="col-md-6 col-sm-6">
+                  <p><strong>Customer:</strong><span class="ms-2" id="customer_name"></span></p>
+                  <p><strong>Return Date:</strong> <span class="ms-2" id="sale_return_date"></span></p>
+                </div>
+              </div>
+              <hr class="mt-2 mb-2" />
+            </div>
+
+            <!-- Product Table -->
+            <div class="table-responsive p-4">
+              <table class="table table-bordered" id="saleTable">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Reason</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="saleReturnTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/jquery.dataTables.min.js"></script>
+    <script src="scripts/dataTables.buttons.min.js"></script>
+    <script src="scripts/jszip.min.js"></script>
+    <script src="scripts/pdfmake.min.js"></script>
+    <script src="scripts/vfs_fonts.js"></script>
+    <script src="scripts/buttons.html5.min.js"></script>
+    <script src="scripts/buttons.print.min.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load Footer
+        fetch("scripts/footer.html")
+          .then((response) => response.text())
+          .then((data) => {
+            document.getElementById("footer-container").innerHTML = data;
+            document.getElementById("year").textContent = new Date().getFullYear();
+          })
+          .catch((error) => console.error("Error loading footer:", error));
+
+        // Load Sidebar
+        fetch("sidebar.html")
+          .then((response) => response.text())
+          .then((html) => {
+            document.getElementById("sidebar-container").innerHTML = html;
+          });
+
+        // Initialize load of sale return details
+        loadSaleReturnDetails();
+      });
+
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+function loadSaleReturnDetails() {
+  const saleId = getQueryParam("id");
+  if (!saleId) return console.error("No sale ID provided.");
+
+  fetch(`${BASEURL}SaleReturn/Detail`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id: saleId }),
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to fetch data.");
+      return response.json();
+    })
+    .then((data) => {
+      const products = data.products;
+      if (!products || !products.length) return;
+
+      let totalAdjusted = 0;
+
+      document.getElementById("voucher_no").textContent = data.voucher_no || "";
+      document.getElementById("sale_date").textContent = data.sale_date || "";
+      document.getElementById("sale_return_date").textContent = data.sale_return_date || "";
+      document.getElementById("customer_name").textContent = data.customer_name || "";
+
+      const tbody = document.getElementById("saleReturnTableBody");
+      tbody.innerHTML = "";
+
+      products.forEach((item) => {
+        totalAdjusted += parseFloat(item.net_amount || 0);
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.product_name}</td>
+            <td></td>
+            <td>${parseFloat(item.price || 0)}</td>
+            <td>${item.quantity}</td>
+            <td>${parseFloat(item.net_amount || 0)}</td>
+          </tr>
+        `;
+      });
+
+      // tbody.innerHTML += `
+      //   <tr>
+      //     <td colspan="3"></td>
+      //     <td class="text-end fw-bold">Total Adjusted:</td>
+      //     <td class="fw-bold">${totalAdjusted.toFixed(2)}</td>
+      //   </tr>
+      // `;
+
+      $("#saleTable").DataTable({
+        responsive: true,
+        destroy: true,
+          dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+        buttons: [
+          { extend: "copy", className: "btn btn-sm" },
+          { extend: "csv", className: "btn btn-sm" },
+          { extend: "excel", className: "btn btn-sm" },
+          { extend: "pdf", className: "btn btn-sm" },
+          { extend: "print", className: "btn btn-sm" },
+        ],
+      });
+    })
+    .catch((err) => console.error("Fetch error:", err));
+}
+ </script>
+  </body>
+</html>

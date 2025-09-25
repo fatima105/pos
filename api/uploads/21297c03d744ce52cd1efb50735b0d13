@@ -1,0 +1,9 @@
+MAIN_CATEGORY,SUB_CATEGORY,Unit,PRODUCT_NAME,QUANTITY,SALE_PRICE,"TAX (0=Inclusive, 1= Exclusive)",SKU,SUPPLIER,SUPPLIER CONTACT,COST_PRICE,Pending Amount,Paid Amount
+Bag,Bag,Pieces,Ladies Pars Rs 1400,2,1400,0,code206,Bhai Bhai Pars House pwd,3069777810,700,1400,0
+Bag,Bag,Pieces,Ladies Pars Rs 900,2,900,0,code207,Bhai Bhai Pars House pwd,3069777810,450,900,0
+Bag,Bag,Pieces,Ladies Pars Rs 2100,8,2100,0,code208,Bhai Bhai Pars House pwd,3069777810,1050,8400,0
+Bag,Bag,Pieces,Ladies Pars Rs 1700,4,1700,0,code209,Bhai Bhai Pars House pwd,3069777810,850,3400,0
+Bag,Bag,Pieces,Ladies Pars Rs 2300,14,2300,0,code210,Bhai Bhai Pars House pwd,3069777810,1150,16100,0
+Bag,Bag,Pieces,Ladies Pars Rs 600,1,600,0,code211,Bhai Bhai Pars House pwd,3069777810,300,300,0
+Bag,Bag,Pieces,Ladies Pars Rs 550,2,550,0,code212,Bhai Bhai Pars House pwd,3069777810,280,560,0
+Bag,Bag,Pieces,Ladies Pars Rs 700,1,700,0,code213,Bhai Bhai Pars House pwd,3069777810,350,350,0

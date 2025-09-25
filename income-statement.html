@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Income Statement</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS Dependencies -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link href="scripts/select2.min.css" rel="stylesheet" />
+    <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .main-container {
+        display: flex;
+        min-height: 100vh;
+      }
+      #sidebar-container a {
+        color: #fff;
+        text-decoration: none;
+        display: block;
+        padding: 8px 0;
+      }
+      #sidebar-container a:hover {
+        text-decoration: none;
+      }
+      .content-container {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+      .fw-bold { font-weight: bold; }
+      .table-summary td { font-size: 1rem; }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <div class="content-container">
+        <h3 class="mb-4">Income Statement</h3>
+
+        <div class="row mb-3">
+                <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <div class="col-md-12 mb-3">
+            <label for="branch" class="form-label fw-bold">
+              Branch <span class="text-danger">*</span>
+            </label>
+            <input type="text" value="Peshawar" class="form-control" readonly />
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="fromDate" class="form-label fw-bold">
+              From Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" id="fromDate" class="form-control" />
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="toDate" class="form-label fw-bold">
+              To Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" id="toDate" class="form-control" />
+          </div>
+
+          <div class="col-md-6 d-flex align-items-end mb-3">
+            <button id="getReportBtn" class="btn btn-danger w-100">
+              Get Report
+            </button>
+          </div>
+        </div>
+
+        <div id="IncomeStatement"></div>
+      </div>
+    </div>
+
+    <!-- JS Dependencies -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/select2.min.js"></script>
+    <script src="scripts/jquery.dataTables.min.js"></script>
+    <script src="scripts/dataTables.buttons.min.js"></script>
+    <script src="scripts/jszip.min.js"></script>
+    <script src="scripts/pdfmake.min.js"></script>
+    <script src="scripts/vfs_fonts.js"></script>
+    <script src="scripts/buttons.html5.min.js"></script>
+    <script src="scripts/buttons.print.min.js"></script>
+    <script src="config.js"></script>
+
+<script>
+       function showInlineAlert(message, type = 'info') {
+        const alertPlaceholder = document.getElementById('alertPlaceholder');
+        const alertHTML = `
+          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        `;
+        alertPlaceholder.innerHTML = alertHTML;
+
+        setTimeout(() => {
+          const alert = alertPlaceholder.querySelector('.alert');
+          if (alert) alert.classList.remove('show');
+        }, 5000);
+      }
+
+  $(document).ready(function () {
+      fetch("sidebar.html")
+    .then((response) => response.text())
+    .then((html) => {
+      document.getElementById("sidebar-container").innerHTML = html;
+    });
+    $("#getReportBtn").on("click", async function () {
+      const startDate = $("#fromDate").val();
+      const endDate = $("#toDate").val();
+
+      if (!startDate || !endDate) {
+       showInlineAlert("Please select both start and end dates.","danger");
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASEURL}Reports/income-statements`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fromDate: startDate, toDate: endDate }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "API Error");
+
+        generateIncomeStatement(data);
+      } catch (err) {
+        console.error("Error fetching Income Statement data:", err);
+       showInlineAlert("Failed to load Income Statement.","danger");
+      }
+    });
+  });
+
+  function generateIncomeStatement(data) {
+    const {
+      totalSale,
+      totalSaleReturn,
+      totalCOGS,
+      totalReturnCOGS,
+      totalExpense,
+      netSale,
+      netCOGS,
+      profitOnSale,
+      netProfitLoss,
+    } = data;
+
+    const tableHtml = `
+      <table class="table table-bordered table-summary mt-4">
+        <thead class="table-dark">
+          <tr><th>Particulars</th><th class="text-end">Amount</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Total Sales</td><td class="text-end">${totalSale.toLocaleString()}</td></tr>
+          <tr><td>Total Sales Return</td><td class="text-end">${totalSaleReturn.toLocaleString()}</td></tr>
+          <tr class="fw-bold"><td>Net Sales</td><td class="text-end">${netSale.toLocaleString()}</td></tr>
+          <tr><td>Cost of Goods Sold</td><td class="text-end">${totalCOGS.toLocaleString()}</td></tr>
+          <tr><td>Return Cost of Goods Sold</td><td class="text-end">${totalReturnCOGS.toLocaleString()}</td></tr>
+          <tr class="fw-bold"><td>Net COGS</td><td class="text-end">${netCOGS.toLocaleString()}</td></tr>
+          <tr class="fw-bold"><td>Profit on Sale</td><td class="text-end">${profitOnSale.toLocaleString()}</td></tr>
+          <tr><td>Total Expenses</td><td class="text-end">${totalExpense.toLocaleString()}</td></tr>
+          <tr class="fw-bold text-danger"><td>Net Profit & Loss</td><td class="text-end">${netProfitLoss.toLocaleString()}</td></tr>
+        </tbody>
+      </table>
+    `;
+
+    $("#IncomeStatement").html(tableHtml);
+  }
+</script>
+
+  </body>
+</html>

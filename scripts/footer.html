@@ -1,0 +1,15 @@
+<footer class="main-footer text-sm text-muted d-flex justify-content-between align-items-center px-3 py-2 bg-light"> 
+    <span>
+        <strong>Copyright &copy; <span id="year"></span> 
+        <a href="https://adminlte.io/" target="_blank">AdminLTE.io</a>.</strong> 
+        All rights reserved.
+    </span>
+    <span class="fw-bold">Version 3.2.0</span>
+</footer>
+
+<script>
+    // Ensure script runs after DOM is loaded
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("year").textContent = new Date().getFullYear();
+    });
+</script>

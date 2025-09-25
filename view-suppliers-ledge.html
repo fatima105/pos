@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Supplier Ledger Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS Dependencies -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link href="scripts/select2.min.css" rel="stylesheet" />
+    <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      .main-container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+
+
+
+
+      #sidebar-container a:hover {
+        text-decoration: none;
+      }
+
+      .content-container {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <div class="content-container">
+        <h3 class="mb-4">Supplier Ledger Report</h3>
+<div id="alertContainer" class="text-center my-3"></div>
+
+        <div class="row mb-3">
+          <div class="col-md-6 mb-3">
+            <label for="fromDate" class="form-label fw-bold">From Date <span class="text-danger">*</span></label>
+            <input type="date" id="fromDate" class="form-control" />
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="toDate" class="form-label fw-bold">To Date <span class="text-danger">*</span></label>
+            <input type="date" id="toDate" class="form-control" />
+          </div>
+
+          <div class="col-md-6 mb-3 " >
+            <label for="supplier_id" class="form-label fw-bold">Supplier <span class="text-danger">*</span></label>
+            <select id="supplier_id" class="form-select select2">
+              <option value="">-- Select Supplier --</option>
+            </select>
+          </div>
+
+     <div class="col-md-6  d-flex justify-content-center">
+  <button id="getReportBtn" class="btn btn-danger btn-sm px-5 py-1">Get Report</button>
+</div>
+
+        </div>
+
+        <div id="reportContainer"></div>
+      </div>
+    </div>
+
+    <!-- JS Dependencies -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/select2.min.js"></script>
+    <script src="scripts/jquery.dataTables.min.js"></script>
+    <script src="scripts/dataTables.buttons.min.js"></script>
+    <script src="scripts/jszip.min.js"></script>
+    <script src="scripts/pdfmake.min.js"></script>
+    <script src="scripts/vfs_fonts.js"></script>
+    <script src="scripts/buttons.html5.min.js"></script>
+    <script src="scripts/buttons.print.min.js"></script>
+    <script src="config.js"></script>
+
+<script>
+  function showAlert(message, type = "danger") {
+    const alertHtml = `
+      <div class="alert alert-${type} alert-dismissible fade show d-inline-block" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    $("#alertContainer").html(alertHtml);
+
+    setTimeout(() => {
+      $("#alertContainer .alert").alert("close");
+    }, 3000);
+  }
+
+  // Set max date
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("fromDate").setAttribute("max", today);
+  document.getElementById("toDate").setAttribute("max", today);
+
+  // Load Sidebar
+  fetch("sidebar.html")
+    .then((response) => response.text())
+    .then((html) => {
+      document.getElementById("sidebar-container").innerHTML = html;
+    });
+
+  $(document).ready(function () {
+    $(".select2").select2({ placeholder: "Select Supplier", allowClear: true });
+    loadSuppliers();
+
+    $("#getReportBtn").on("click", function () {
+      const supplierId = $("#supplier_id").val();
+      const fromDate = $("#fromDate").val();
+      const toDate = $("#toDate").val();
+
+      if (!supplierId || !fromDate || !toDate) {
+        showAlert("Please fill all required fields.");
+        return;
+      }
+
+      fetch(`${BASEURL}Reports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplier_id: supplierId,
+          start_date: fromDate,
+          end_date: toDate,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.error) {
+            showAlert(data.error, "warning");
+            $("#reportContainer").html(
+              "<p class='text-center text-muted mt-3'>No records found.</p>"
+            );
+          } else if (Array.isArray(data.ledger) && data.ledger.length > 0) {
+            // ✅ Pass opening_balance properly
+            generateTable(data.ledger, parseFloat(data.opening_balance || 0));
+          } else {
+            showAlert(
+              "No ledger data found for the selected supplier and date range.",
+              "warning"
+            );
+            $("#reportContainer").html(
+              "<p class='text-center text-muted mt-3'>No records found.</p>"
+            );
+          }
+        })
+        .catch((err) => {
+          console.error("Error:", err);
+          showAlert("Failed to load report data.");
+          $("#reportContainer").html(
+            "<p class='text-center text-danger mt-3'>Error loading data.</p>"
+          );
+        });
+    });
+  });
+
+  function loadSuppliers() {
+    fetch(`${BASEURL}Supplier`)
+      .then((res) => res.json())
+      .then((data) => {
+        const select = $("#supplier_id");
+        select.empty();
+        if (data.Supplier?.length > 0) {
+          select.append(`<option value="">-- Select Supplier --</option>`);
+          data.Supplier.forEach((s) => {
+            select.append(
+              `<option value="${s.id}">${s.name} (${s.code})</option>`
+            );
+          });
+        } else {
+          select.append("<option>No supplier found</option>");
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading suppliers:", err);
+        $("#supplier_id").append("<option>Error loading suppliers</option>");
+      });
+  }
+
+  function generateTable(entries, openingBalance) {
+    let balance = parseFloat(openingBalance);
+
+    // Opening balance row
+    let rows = `
+      <tr>
+        <td colspan="5" class="text-end"><strong>Opening Balance</strong></td>
+        <td>${balance.toFixed(2)}</td>
+      </tr>
+    `;
+
+    entries.forEach((entry, index) => {
+      const dr = parseFloat(entry.debit || 0);
+      const cr = parseFloat(entry.credit || 0);
+      balance += cr - dr;
+
+      rows += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${entry.date || ""}</td>
+          <td>${entry.narration || ""}</td>
+          <td>${dr.toFixed(2)}</td>
+          <td>${cr.toFixed(2)}</td>
+          <td>${balance.toFixed(2)}</td>
+        </tr>
+      `;
+    });
+
+    const tableHtml = `
+      <table id="reportTable" class="table table-bordered table-striped mt-4">
+        <thead class="table-dark">
+          <tr>
+            <th>Sr.</th>
+            <th>Date</th>
+            <th>Narration</th>
+            <th>Dr.</th>
+            <th>Cr.</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <th colspan="5" class="text-end">Closing Balance:</th>
+            <th>${balance.toFixed(2)}</th>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+
+    $("#reportContainer").html(tableHtml);
+  }
+</script>
+
+
+
+  </body>
+</html>

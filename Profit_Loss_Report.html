@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Profit Loss Statement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS Dependencies -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link href="scripts/select2.min.css" rel="stylesheet" />
+  <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+  <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    .main-container { display: flex; min-height: 100vh; }
+    #sidebar-container a { color: #fff; text-decoration: none; display: block; padding: 8px 0; }
+    #sidebar-container a:hover { text-decoration: none; }
+    .content-container { flex: 1; padding: 20px; background-color: #f8f9fa; }
+    .bg-buttons { background-color: #6c757d; color: #e9ecef; }
+    .bg-buttons .btn { background-color: #6c757d; color: #e9ecef; }
+    .fw-bold { font-weight: bold; }
+    .table-summary td { font-size: 1rem; }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="content-container">
+      <h3 class="mb-4">Profit Loss Statement</h3>
+
+      <div class="row mb-3">
+        <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4"
+          style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+        <div class="col-md-12 mb-3">
+          <label for="branch" class="form-label fw-bold"> Branch <span class="text-danger">*</span> </label>
+          <input type="text" value="Peshawar" class="form-control" readonly />
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label for="fromDate" class="form-label fw-bold"> From Date <span class="text-danger">*</span> </label>
+          <input type="date" id="fromDate" class="form-control" />
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <label for="toDate" class="form-label fw-bold"> To Date <span class="text-danger">*</span> </label>
+          <input type="date" id="toDate" class="form-control" />
+        </div>
+
+        <div class="col-md-6 d-flex align-items-end mb-3">
+          <button id="getReportBtn" class="btn btn-danger w-100"> Get Report </button>
+        </div>
+        <div class="col-md-6 d-flex align-items-end mb-3" id="pdfBtnContainer" style="display:none;">
+          <button id="downloadPdf" class="btn btn-secondary w-100"> Download PDF </button>
+        </div>
+      </div>
+
+      <!-- Report Container -->
+      <div id="IncomeStatement"></div>
+    </div>
+  </div>
+
+  <!-- JS Dependencies -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/select2.min.js"></script>
+  <script src="scripts/jquery.dataTables.min.js"></script>
+  <script src="scripts/dataTables.buttons.min.js"></script>
+  <script src="scripts/jszip.min.js"></script>
+  <script src="scripts/pdfmake.min.js"></script>
+  <script src="scripts/vfs_fonts.js"></script>
+  <script src="scripts/buttons.html5.min.js"></script>
+  <script src="scripts/buttons.print.min.js"></script>
+
+<script src="config.js"></script>
+  <!-- jsPDF + autoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+
+
+  function showInlineAlert(message, type = 'info') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>`;
+    alertPlaceholder.innerHTML = alertHTML;
+    setTimeout(() => {
+      const alert = alertPlaceholder.querySelector('.alert');
+      if (alert) alert.classList.remove('show');
+    }, 5000);
+  }
+
+  // ✅ Render Profit/Loss
+// ✅ Render Profit/Loss with Grand Total row
+function generateProfitLossReport(apiResponse){
+  const data = apiResponse.data || [];
+  if(!data.length){
+    $("#IncomeStatement").html(`<div class="alert alert-warning">No Profit/Loss data found.</div>`);
+    $("#pdfBtnContainer").hide(); 
+    return;
+  }
+
+  let totalRetail=0, totalDiscount=0, totalPrice=0, totalCost=0, totalProfit=0;
+
+  let html = `<table id="ProfitLossTable" class="table table-bordered table-summary mt-2">
+    <thead class="table-dark">
+      <tr>
+        <th>Date</th>
+        <th>Voucher</th>
+        <th class="text-end">Retail</th>
+        <th class="text-end">Discount</th>
+        <th class="text-end">Price</th>
+        <th class="text-end">Total Cost</th>
+        <th class="text-end">Profit/Loss</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+  data.forEach(row=>{
+    const retail = row.retail ?? 0;
+    const discount = row.discount ?? 0;
+    const price = row.price ?? 0;
+    const cost = row.cost ?? 0;
+    const profit = row.profit ?? 0;
+
+    totalRetail += retail;
+    totalDiscount += discount;
+    totalPrice += price;
+    totalCost += cost;
+    totalProfit += profit;
+
+    html+=`
+      <tr>
+        <td>${row.date}</td>
+        <td>${row.voucher}</td>
+        <td class="text-end">${retail.toFixed(2)}</td>
+        <td class="text-end">${discount.toFixed(2)}</td>
+        <td class="text-end">${price.toFixed(2)}</td>
+        <td class="text-end">${cost.toFixed(2)}</td>
+        <td class="text-end">${profit.toFixed(2)}</td>
+      </tr>`;
+  });
+
+  // ✅ Grand Total Row
+  html+=`
+    <tr style="background:#e9ecef;font-weight:bold;">
+      <td colspan="2">Grand Total:</td>
+      <td class="text-end">${totalRetail.toFixed(2)}</td>
+      <td class="text-end">${totalDiscount.toFixed(2)}</td>
+      <td class="text-end">${totalPrice.toFixed(2)}</td>
+      <td class="text-end">${totalCost.toFixed(2)}</td>
+      <td class="text-end">${totalProfit.toFixed(2)}</td>
+    </tr>
+  `;
+
+  html+=`</tbody></table>`;
+
+  $("#IncomeStatement").html(html);
+  $("#pdfBtnContainer").show();
+}
+
+  // ✅ Fetch Report Button
+  $(document).ready(function () {
+    fetch("sidebar.html").then(r => r.text()).then(html => {
+      document.getElementById("sidebar-container").innerHTML = html;
+    });
+
+    $("#getReportBtn").on("click", async function () {
+      const startDate = $("#fromDate").val();
+      const endDate = $("#toDate").val();
+      if (!startDate || !endDate) {
+        showInlineAlert("Please select both start and end dates.", "danger");
+        return;
+      }
+
+      try {
+        const apiResponse = await fetch(`${BASEURL}Reports/ProfitLossReport`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            start_date: startDate,
+            end_date: endDate
+          })
+        }).then(r => r.json());
+
+        generateProfitLossReport(apiResponse);
+      } catch (err) {
+        showInlineAlert("Failed to fetch report. Check API.", "danger");
+      }
+    });
+  });
+
+  // ✅ PDF Export
+  document.addEventListener("click", function(e){
+    if(e.target && e.target.id === "downloadPdf"){
+      if(!document.querySelector("#ProfitLossTable")){
+        showInlineAlert("Please generate the report before downloading PDF.", "danger");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("p", "pt", "a4");
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 40;
+
+      doc.setFontSize(14);
+      doc.setFont(undefined, "bold");
+      doc.text("ALIMART", margin, 30);
+
+      const reportTitle = "Profit & Loss Report";
+      doc.setFontSize(14);
+      doc.setFont(undefined, "bold");
+      const reportWidth = doc.getTextWidth(reportTitle);
+      doc.text(reportTitle, pageWidth - margin - reportWidth, 30);
+
+      doc.autoTable({
+        html: "#ProfitLossTable",
+        startY: 50,
+        theme: "grid",
+        headStyles: { fillColor: [220, 53, 69] },
+        styles: { fontSize: 9 }
+      });
+
+   
+        // Prepared / Approved
+        const finalY = doc.lastAutoTable.finalY || 30;
+        const lineWidth = 70;
+        const spaceBetween = 50;
+        const startX = margin;
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("Prepared By:", startX, finalY + 25);
+        doc.setFont(undefined, "normal");
+        doc.line(startX, finalY + 32, startX + lineWidth, finalY + 32);
+
+        const approvedX = startX + lineWidth + spaceBetween;
+        doc.setFont(undefined, "bold");
+        doc.text("Approved By:", approvedX, finalY + 25);
+        doc.setFont(undefined, "normal");
+        doc.line(approvedX, finalY + 32, approvedX + lineWidth, finalY + 32);
+
+      doc.save("Profit_Loss_Report.pdf");
+    }
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Cash Journal Payment</title>
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="scripts/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+
+<body>
+<div class="main-container">
+  <!-- Sidebar -->
+  <div id="sidebar-container"></div>
+
+  <!-- Content Area -->
+  <div class="content-container">
+    <div class="container-fluid bg-gray">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Add Cash Journal Payment</h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="index.html" class="text-primary text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a href="Journal-voucher.html" class="text-primary text-decoration-none">Cash Journal Payment</a></li>
+            <li class="breadcrumb-item active text-muted" aria-current="page">Add</li>
+          </ol>
+        </nav>
+      </div>
+
+      <!-- Alerts -->
+      <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4"
+        style="z-index: 1055; width: 400px; max-width: 90%;">
+      </div>
+
+      <!-- Form Card -->
+      <div style="margin-top:10px;" class="d-flex justify-content-center">
+        <div class="card shadow-lg bg-white">
+          <div class="card-body">
+            <form id="CashJournalPayment">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="date" class="form-label fw-bold">Date <span class="text-danger">*</span></label>
+                  <input required id="date" type="date" class="form-control" />
+                </div>
+              </div>
+
+              <hr style="border-top: dotted 1px;" />
+              <h5>Cash Journal Details</h5>
+
+              <!-- Table -->
+              <div class="table-responsive">
+                <table class="table" id="cashJournalTable">
+                  <thead>
+                    <tr>
+                      <th>Account</th>
+                      <th>Balance</th>
+                      <th>Remarks</th>
+                      <th>Debit</th>
+                      <th>Credit</th>
+                      <th><i id="addRowBtn" class="fa-solid fa-plus" style="cursor:pointer;"></i></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <select class="form-select Account">
+                          <option value="">--Select Account--</option>
+                        </select>
+                      </td>
+                      <td><input type="text" class="form-control balance" readonly /></td>
+                      <td><input type="text" class="form-control remarks" /></td>
+                      <td><input type="number" class="form-control debit" /></td>
+                      <td><input type="number" class="form-control credit" /></td>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Totals -->
+              <div class="mb-3 d-flex justify-content-end">
+                <label class="form-label fw-bold me-3 mb-0" style="width: 120px;">Total Debit</label>
+                <input required type="text" id="debit" name="debit" class="form-control w-auto" value="0" readonly />
+              </div>
+
+              <div class="mb-3 d-flex justify-content-end">
+                <label class="form-label fw-bold me-3 mb-0" style="width: 120px;">Total Credit</label>
+                <input required type="text" id="credit" name="credit" class="form-control w-auto" value="0" readonly />
+              </div>
+
+              <!-- Submit -->
+              <div class="text-end">
+                <button type="submit" class="btn btn-primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer-container"></div>
+  </div>
+</div>
+
+
+
+  <!-- Error Modal -->
+  <div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger" id="ErrorModalLabel">
+            <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+            Please check your errors
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Includes -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/scripts.js"></script>
+  <script src="config.js"></script>
+
+  <script>
+    // Load footer
+    fetch("scripts/footer.html")
+      .then(res => res.text())
+      .then(data => {
+        $("#footer-container").html(data);
+        $("#year").text(new Date().getFullYear());
+      });
+
+    // Load sidebar
+    fetch("sidebar.html")
+      .then(res => res.text())
+      .then(data => {
+        $("#sidebar-container").html(data);
+      });
+
+    // Restrict date to today or before
+    const datePickerId = document.getElementById('date');
+    datePickerId.max = new Date().toISOString().split("T")[0];
+
+    // Load accounts into dropdowns
+    function loadAccounts() {
+      fetch(`${BASEURL}Supplier/chart`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.data?.length > 0) {
+            const options = data.data.map(c =>
+              `<option value="${c.head_code}" data-id="${c.id}">${c.head_name}</option>`
+            ).join('');
+
+            $('.Account').each(function () {
+              const selected = $(this).val();
+              $(this).html('<option value="">--Select Account--</option>' + options);
+              if (selected) $(this).val(selected).trigger('change');
+            });
+          } else {
+            $('.Account').html('<option value="">No Account found</option>');
+          }
+        });
+    }
+
+    // Show inline alerts
+    function showInlineAlert(message, type = 'info') {
+      const alertPlaceholder = document.getElementById('alertPlaceholder');
+      const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>`;
+      alertPlaceholder.innerHTML = alertHTML;
+      setTimeout(() => {
+        const alert = alertPlaceholder.querySelector('.alert');
+        if (alert) alert.classList.remove('show');
+      }, 5000);
+    }
+
+    // Calculate total debit and credit
+    function calculateTotals() {
+      let totalDebit = 0;
+      let totalCredit = 0;
+
+      $('#cashJournalTable tbody tr').each(function () {
+        const debit = parseFloat($(this).find('.debit').val());
+        const credit = parseFloat($(this).find('.credit').val());
+
+        if (!isNaN(debit)) totalDebit += debit;
+        if (!isNaN(credit)) totalCredit += credit;
+      });
+
+      $('#debit').val(totalDebit.toFixed(2));
+      $('#credit').val(totalCredit.toFixed(2));
+    }
+
+    $(document).ready(function () {
+      loadAccounts();
+
+      // Recalculate totals when debit/credit values change
+// Recalculate totals when debit/credit values change
+$(document).on('input', '.debit, .credit', function () {
+  const $row = $(this).closest('tr');
+  const debitField = $row.find('.debit');
+  const creditField = $row.find('.credit');
+
+  const debitVal = parseFloat(debitField.val()) || 0;
+  const creditVal = parseFloat(creditField.val()) || 0;
+
+  if (debitVal > 0) {
+    creditField.val('0'); // reset credit if debit entered
+  } else if (creditVal > 0) {
+    debitField.val('0'); // reset debit if credit entered
+  }
+
+  calculateTotals();
+});
+
+
+      // Load balance on account change
+      $(document).on('change', '.Account', function () {
+        const $row = $(this).closest('tr');
+        const selectedOption = $(this).find('option:selected');
+        const accountId = selectedOption.data('id');
+
+        if (!accountId) {
+          $row.find('.balance').val('');
+          return;
+        }
+
+        fetch(`${BASEURL}CashJournalVoucher/Balance/${accountId}`)
+          .then(res => res.json())
+          .then(data => {
+            $row.find('.balance').val(data?.balance ?? '0');
+          })
+          .catch(() => {
+            $row.find('.balance').val('0');
+          });
+      });
+
+      // Add new row
+      $('#addRowBtn').on('click', function () {
+        const newRow = `
+        <tr>
+          <td><select class="form-select Account"><option value="">--Select Account--</option></select></td>
+          <td><input type="text" class="form-control balance" readonly /></td>
+          <td><input type="text" class="form-control remarks" /></td>
+          <td><input type="number" class="form-control debit" /></td>
+          <td><input type="number" class="form-control credit" /></td>
+          <td><i class="fa-solid fa-minus removeRowBtn" style="cursor:pointer; color:red;"></i></td>
+        </tr>`;
+        $('#cashJournalTable tbody').append(newRow);
+        loadAccounts();
+      });
+
+      // Remove row
+      $(document).on('click', '.removeRowBtn', function () {
+        $(this).closest('tr').remove();
+        calculateTotals();
+      });
+
+      // Submit form
+      $('#CashJournalPayment').on('submit', function (e) {
+        e.preventDefault();
+
+        const date = $('#date').val();
+        const debitTotal = parseFloat($('#debit').val());
+        const creditTotal = parseFloat($('#credit').val());
+
+        // Check debit-credit balance
+        if (debitTotal !== creditTotal) {
+          showInlineAlert('⚠️ Total Debit and Credit must be equal.', 'danger');
+          return;
+        }
+
+        const items = [];
+        let hasError = false;
+
+        // Validate each row
+        $('#cashJournalTable tbody tr').each(function () {
+          const $row = $(this);
+          const remarks = $row.find('.remarks').val().trim();
+          const debit = parseFloat($row.find('.debit').val());
+          const credit = parseFloat($row.find('.credit').val());
+          const head_code = $row.find('.Account').val();
+
+          if (!head_code || !remarks || (isNaN(debit) && isNaN(credit))) {
+            hasError = true;
+            $row.addClass('table-danger'); // highlight invalid row
+          } else {
+            $row.removeClass('table-danger');
+            items.push({
+              remarks,
+              debit: debit || 0,
+              credit: credit || 0,
+              head_code
+            });
+          }
+        });
+
+        if (hasError) {
+          showInlineAlert('⚠️ Please fill all fields in each row before saving.', 'danger');
+          return;
+        }
+
+        if (items.length === 0) {
+          showInlineAlert('Please add at least one Cash Journal Payment detail.', 'warning');
+          return;
+        }
+
+        const payload = {
+          location_id: '1',
+          user_id: '1',
+          date,
+          debit: debitTotal,
+          credit: creditTotal,
+          items,
+        };
+
+        const submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true).text('Saving...');
+
+        fetch(`${BASEURL}CashJournalVoucher`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.message?.includes('success')) {
+              sessionStorage.setItem('globalAlertMessage', 'Cash Journal Payment saved successfully');
+              sessionStorage.setItem('globalAlertType', 'success');
+
+              // Reset form and table
+              $('#CashJournalPayment')[0].reset();
+              $('#cashJournalTable tbody').html(`
+              <tr>
+                <td><select class="form-select Account"><option value="">--Select Account--</option></select></td>
+                <td><input type="text" class="form-control balance" readonly /></td>
+                <td><input type="text" class="form-control remarks" /></td>
+                <td><input type="number" class="form-control debit" /></td>
+                <td><input type="number" class="form-control credit" /></td>
+                <td><i class="fa-solid fa-minus removeRowBtn" style="cursor:pointer; color:red;"></i></td>
+              </tr>`);
+              $('#debit').val('0');
+              $('#credit').val('0');
+              loadAccounts();
+
+              // Redirect
+              window.location.href = "Journal-voucher.html";
+            } else {
+              showInlineAlert('❌ Failed to save Cash Journal Payment.', 'danger');
+            }
+          })
+          .catch(err => {
+            showInlineAlert('❌ Error saving Cash Journal Payment!', 'danger');
+            console.error(err);
+          })
+          .finally(() => {
+            submitBtn.prop('disabled', false).text('Save');
+          });
+      });
+    });
+  </script>
+
+</body>
+
+</html>

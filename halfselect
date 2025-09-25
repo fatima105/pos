@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Purchase</title>
+      <script src="scripts/jquery-3.6.0.min.js"></script>
+
+    <script src="scripts/select2.min.js"></script>
+  <link href="scripts/select2.min.css" rel="stylesheet" />
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css"/>
+  <link rel="stylesheet" href="scripts/style.css" />
+  <style>
+    .bg-buttons {
+      background-color: #6c757d;
+      color: #e9ecef;
+    }
+    .bg-buttons .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+<div class="content-container">
+    <div class="container-fluid bg-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">Add Purchase</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item">
+                <a href="index.html" class="text-primary text-decoration-none">Home</a>
+              </li>
+              <li class="breadcrumb-item">
+                <a href="view-purchases.html" class="text-primary text-decoration-none">Purchase</a>
+              </li>
+              <li class="breadcrumb-item active text-muted" aria-current="page">Add</li>
+            </ol>
+          </nav>
+        </div>
+        <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+        <div class="card shadow-lg mt-5">
+          <div class="container mt-4 mb-4">
+            <form id="purchaseAdd">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">Supplier<span class="text-danger fw-bold">*</span></label>
+                  <select id="supplier_id" class="form-select select2">
+                    <option>--Select Supplier--</option>
+                  </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">Date<span class="text-danger fw-bold">*</span></label>
+                  <input required id="date" type="date" class="form-control"/>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-bold">Invoice #<span class="text-danger fw-bold">*</span></label>
+                  <input required type="text" id="invoice_id" class="form-control"/>
+                </div>
+                <hr style="border-top: dotted 1px;" />
+                <div class="col-md-6 mb-3">
+                  <input type="text" placeholder="Barcode" name="Barcode" id="Barcode" class="form-control"/>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <select id="product_id" class="form-select">
+                    <option>--Choose Product--</option>
+                  </select>
+                </div>
+                <div id="product-rows" class="mt-3"></div>
+                <div class="mb-3 d-flex" style="justify-content: flex-end">
+                  <label class="form-label fw-bold me-3 mb-0" style="width: 120px;">Total</label>
+                  <input required type="text" id="total" name="total" class="form-control w-auto" value="0" />
+                </div>
+                <div class="mb-3 d-flex" style="justify-content: flex-end">
+                  <label class="form-label fw-bold me-3 mb-0" style="width: 120px;">Amount Paid</label>
+                  <input required type="text" id="amount_paid" name="amount_paid" class="form-control w-auto" />
+                </div>
+              </div>
+              <div class="text-end">
+                <button type="submit" class="btn btn-primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+</div>
+    </div>
+<!-- Load jQuery first -->
+<script src="scripts/jquery-3.6.0.min.js"></script>
+
+<!-- Then Select2 -->
+<script src="scripts/select2.min.js"></script>
+<link href="scripts/select2.min.css" rel="stylesheet" />
+
+<!-- Then Bootstrap and other plugins -->
+<script src="scripts/bootstrap.bundle.min.js"></script>
+<script src="scripts/jquery.dataTables.min.js"></script>
+<script src="scripts/dataTables.buttons.min.js"></script>
+<script src="scripts/jszip.min.js"></script>
+<script src="scripts/pdfmake.min.js"></script>
+<script src="scripts/vfs_fonts.js"></script>
+<script src="scripts/buttons.html5.min.js"></script>
+<script src="scripts/buttons.print.min.js"></script>
+<script src="config.js"></script>
+
+
+  <!-- Your Custom Scripts -->
+ <script>
+    document.getElementById('amount_paid').addEventListener('input', function () {
+    this.value = this.value
+      .replace(/[^0-9.]/g, '')        // Allow only digits and a dot
+      .replace(/(\..*)\./g, '$1');    // Remove extra dots, allow only one
+  });
+  $(document).ready(function () {
+  // Load footer and sidebar
+  fetch("scripts/footer.html")
+    .then((res) => res.text())
+    .then((data) => {
+      $("#footer-container").html(data);
+      $("#year").text(new Date().getFullYear());
+    });
+
+  fetch("sidebar.html")
+    .then((res) => res.text())
+    .then((data) => {
+      $("#sidebar-container").html(data);
+    });
+
+  const today = new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById('date');
+  dateInput.value = today;
+  dateInput.max = today;
+
+  $('#supplier_id').select2({
+    placeholder: "Select Supplier",
+    allowClear: true
+  });
+$('#product_id').select2({
+  placeholder: "Choose Product",
+  allowClear: true,
+  width: '100%'
+});
+
+  let selectedProductIds = [];
+  let allProducts = [];
+
+  // Load products and suppliers
+async function loadProducts() {
+  try {
+    const response = await fetch(`${BASEURL}Product`);
+    const data = await response.json();
+    const select = $('#product_id'); // use jQuery for select2
+    select.empty();
+
+    allProducts = data.Product || [];
+
+    if (data.Product && data.Product.length > 0) {
+      select.append(new Option('--Choose Product--', ''));
+
+      const filteredProducts = data.Product.filter(product => product.status != "Block");
+
+      filteredProducts.forEach(product => {
+        const option = new Option(product.name, product.id);
+        $(option).attr('data-unit', product.unit_name || 'N/A');
+        $(option).attr('data-sku', product.SKU || '');
+        select.append(option);
+      });
+    } else {
+      select.append(new Option('No Product found', ''));
+    }
+
+    // 🔹 Initialize Select2 here
+    select.select2({
+      placeholder: "Choose Product",
+      allowClear: true,
+      width: '100%'
+    });
+
+  } catch (err) {
+    console.error('Error loading products:', err);
+  }
+}
+
+  function loadSuppliers() {
+    fetch(`${BASEURL}Supplier`)
+      .then(res => res.json())
+      .then(data => {
+        const select = document.getElementById('supplier_id');
+        select.innerHTML = '';
+        if (data.Supplier?.length > 0) {
+          select.insertAdjacentHTML('beforeend', '<option value="">Select Supplier</option>');
+          data.Supplier.forEach(s => {
+            const opt = `<option value="${s.id}">${s.name} (${s.code})</option>`;
+            select.insertAdjacentHTML('beforeend', opt);
+          });
+        } else {
+          select.innerHTML = '<option value="">No Supplier found</option>';
+        }
+      });
+  }
+
+  function addOrUpdateProductRow(productId, name, unitName) {
+    const productRows = document.getElementById("product-rows");
+    const existingRow = productRows.querySelector(`[data-product-id="${productId}"]`);
+    if (existingRow) {
+      const qtyInput = existingRow.querySelector(".quantity");
+      qtyInput.value = parseInt(qtyInput.value) + 1;
+      const unitPrice = parseFloat(existingRow.querySelector(".unit-price").value) || 0;
+      const subtotalInput = existingRow.querySelector(".subtotal");
+      subtotalInput.value = (parseInt(qtyInput.value) * unitPrice).toFixed(2);
+      updateTotal();
+      return;
+    }
+
+    if (!productRows.querySelector(".fw-bold")) {
+      const headerRow = document.createElement("div");
+      headerRow.className = "row mb-2 fw-bold";
+      headerRow.innerHTML = `
+        <div class="col-md-3"><label>Product Name</label></div>
+        <div class="col-md-2"><label>Unit</label></div>
+        <div class="col-md-2"><label>Quantity</label></div>
+        <div class="col-md-2"><label>Unit Price</label></div>
+        <div class="col-md-2"><label>Subtotal</label></div>
+        <div class="col-md-1"></div>`;
+      productRows.appendChild(headerRow);
+    }
+
+    const row = document.createElement("div");
+    row.className = "row mb-2 align-items-center";
+    row.setAttribute("data-product-id", productId);
+    selectedProductIds.push(parseInt(productId));
+
+    row.innerHTML = `
+      <div class="col-md-3">
+        <input type="text" class="form-control" value="${name}" readonly />
+        <input type="hidden" name="product_ids[]" value="${productId}" />
+      </div>
+      <div class="col-md-2">
+        <input type="text" class="form-control" value="${unitName}" readonly />
+      </div>
+      <div class="col-md-2">
+        <input type="number" name="quantities[]" class="form-control quantity" value="1" min="1" />
+      </div>
+      <div class="col-md-2">
+        <input type="text" name="prices[]" class="form-control unit-price" value="1" min="1"  />
+      </div>
+      <div class="col-md-2">
+        <input type="number" class="form-control subtotal" value="0" readonly />
+      </div>
+      <div class="col-md-1">
+        <button type="button" class="btn btn-danger btn-sm remove-row">✖</button>
+      </div>
+    `;
+
+    productRows.appendChild(row);
+document.querySelectorAll('.unit-price').forEach(function (input) {
+  input.addEventListener('input', function () {
+    this.value = this.value
+      .replace(/[^0-9.]/g, '')       // Allow only digits and dot
+      .replace(/(\..*)\./g, '$1');   // Only one dot allowed
+  });
+});
+
+    const qtyInput = row.querySelector(".quantity");
+    const priceInput = row.querySelector(".unit-price");
+    const subtotalInput = row.querySelector(".subtotal");
+
+    const updateSubtotal = () => {
+      const qty = parseFloat(qtyInput.value) || 0;
+      const price = parseFloat(priceInput.value) || 0;
+      subtotalInput.value = (qty * price).toFixed(2);
+      updateTotal();
+    };
+
+    qtyInput.addEventListener("input", updateSubtotal);
+    priceInput.addEventListener("input", updateSubtotal);
+    updateSubtotal();
+
+    row.querySelector(".remove-row").addEventListener("click", () => {
+      selectedProductIds = selectedProductIds.filter(id => id !== parseInt(productId));
+      row.remove();
+      updateTotal();
+      if (!productRows.querySelector('[data-product-id]')) productRows.innerHTML = '';
+    });
+  }
+
+  function updateTotal() {
+    let total = 0;
+    document.querySelectorAll(".subtotal").forEach(input => {
+      total += parseFloat(input.value) || 0;
+    });
+    document.getElementById("total").value = total.toFixed(2);
+  }
+
+function setupProductSelection() {
+  $('#product_id').on('select2:select', function (e) {
+    const data = e.params.data; // Select2 gives us the id + text
+    const selectedOption = $(this).find(`option[value="${data.id}"]`);
+
+    if (!data.id) return;
+
+    addOrUpdateProductRow(
+      data.id,
+      data.text,
+      selectedOption.attr("data-unit")
+    );
+
+    // reset after adding
+    $(this).val('').trigger('change');
+  });
+}
+
+
+  function setupBarcodeScan() {
+    const barcodeInput = document.getElementById("Barcode");
+    barcodeInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const sku = barcodeInput.value.trim();
+        if (!sku) return;
+        const product = allProducts.find(p => p.SKU === sku);
+        if (product) {
+              console.log("found");
+          addOrUpdateProductRow(product.id, product.name, product.unit_name || 'N/A');
+          barcodeInput.value = "";
+        } else {
+          console.log("not found");
+       
+        
+       showInlineAlert('No product found with this SKU', 'danger');
+        }
+      }
+    });
+  }
+function showInlineAlert(message, type = 'info') {
+  const alertPlaceholder = document.getElementById('alertPlaceholder');
+  const alertHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  alertPlaceholder.innerHTML = alertHTML;
+
+  // Optional: Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = alertPlaceholder.querySelector('.alert');
+    if (alert) alert.classList.remove('show');
+  }, 5000);
+}
+
+  function setupFormSubmission() {
+    $('#purchaseAdd').on('submit', function (e) {
+      e.preventDefault();
+
+      const supplier_id = $('#supplier_id').val();
+      const invoice_no = $('#invoice_id').val();
+      const barcode = $('#Barcode').val();
+      const purchase_date = $('#date').val();
+      const amount = parseFloat($('#total').val()) || 0;
+      const amount_paid = parseFloat($('input[name="amount_paid"]').val()) || 0;
+
+      if (!supplier_id || !invoice_no || !purchase_date || amount <= 0) {
+       showInlineAlert(`Please fill all required fields and total must be > 0.`,'danger');
+    
+        return;
+      }
+
+      if (selectedProductIds.length === 0) {
+      showInlineAlert(`Please add at least one product.`,`danger`);
+   
+        return;
+      }
+
+      const voucher_no = 'VO-' + Math.floor(1000 + Math.random() * 9000);
+      const payment_status = amount_paid === 0 ? "un-paid" : (amount_paid !== amount ? "partial payment" : "paid");
+
+      const products = [];
+      $('[data-product-id]').each(function () {
+        const pid = $(this).data('product-id');
+        const qty = parseFloat($(this).find('.quantity').val()) || 1;
+        const price = parseFloat($(this).find('.unit-price').val()) || 1;
+        products.push({
+          product_id: pid,
+          quantity: qty,
+          unit_price: price,
+          subtotal: qty * price
+        });
+      });
+
+      const purchaseData = {
+        supplier_id,
+        invoice_no,
+        voucher_no,
+        amount,
+        amount_paid,
+        barcode,
+        payment_status,
+        purchase_date,
+        products
+      };
+
+      fetch(`${BASEURL}Purchase`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(purchaseData)
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.purchase_id) {
+             showInlineAlert(`Purchase Added Successfully`,`success`);
+         
+            $('#purchaseAdd')[0].reset();
+            selectedProductIds = [];
+            $('#product-rows').html('');
+            window.location.href = "view-purchases.html";
+          } else {
+             showInlineAlert(`Error Adding Purchase`,`danger`);
+          
+          }
+        })
+        .catch(err => {
+          console.error(err);
+        showInlineAlert(`Failed to submit data`,`danger`);
+         
+        });
+    });
+  }
+
+  // Initialize everything
+  loadSuppliers();
+  loadProducts();
+  setupProductSelection();
+  setupBarcodeScan();
+  setupFormSubmission();
+});
+
+ </script>
+</body>
+</html>

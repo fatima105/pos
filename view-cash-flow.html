@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cash Flow Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS Dependencies -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link href="scripts/select2.min.css" rel="stylesheet" />
+    <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+    <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+
+    <style>
+      #downloadPdf{ visibility: hidden;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      .main-container {
+        display: flex;
+        min-height: 100vh;
+      }
+      #AB {
+  display: none; /* hidden initially */
+}
+
+
+      #sidebar-container a {
+        color: #fff;
+        text-decoration: none;
+        display: block;
+        padding: 8px 0;
+      }
+
+      #sidebar-container a:hover {
+        text-decoration: none;
+      }
+
+      .content-container {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+      }
+
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <div class="content-container">
+        <h3 class="mb-4">Cash Flow Report</h3>
+        <div
+          id="alertPlaceholder"
+          class="position-fixed top-0 start-50 translate-middle-x mt-4"
+          style="z-index: 1055; width: 400px; max-width: 90%;"
+        ></div>
+
+        <div class="row mb-3">
+          <div class="col-md-12 mb-3">
+            <label for="branch" class="form-label fw-bold">
+              Branch <span class="text-danger">*</span>
+            </label>
+            <input type="text" value="Peshawar" class="form-control" readonly />
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="fromDate" class="form-label fw-bold">
+              From Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" id="fromDate" class="form-control" />
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="toDate" class="form-label fw-bold">
+              To Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" id="toDate" class="form-control" />
+          </div>
+
+          <div class="col-md-6 d-flex align-items-end mb-3">
+            <button id="getReportBtn" class="btn btn-danger w-100">
+              Get Report
+            </button>
+          </div>
+        </div>
+        <hr class="mt-2" />
+
+        <div    class="d-flex justify-content-end mb-3">
+          <button  id="downloadPdf"  class="btn btn-danger btn-sm d-flex align-items-center"
+            
+          >
+            <i class="fas fa-file-pdf fa-2x me-2"></i>
+          </button>
+        </div>
+        <div id="cashFlow"></div>
+      </div>
+    </div>
+
+    <!-- JS Dependencies -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/select2.min.js"></script>
+    <script src="scripts/jquery.dataTables.min.js"></script>
+    <script src="scripts/dataTables.buttons.min.js"></script>
+    <script src="scripts/jszip.min.js"></script>
+    <script src="scripts/pdfmake.min.js"></script>
+    <script src="scripts/vfs_fonts.js"></script>
+    <script src="scripts/buttons.html5.min.js"></script>
+    <script src="scripts/buttons.print.min.js"></script>
+    <script src="config.js"></script>
+
+    <!-- ✅ Add jsPDF + AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+ <script>
+  function showInlineAlert(message, type = "info") {
+    const alertPlaceholder = document.getElementById("alertPlaceholder");
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    alertPlaceholder.innerHTML = alertHTML;
+
+    setTimeout(() => {
+      const alert = alertPlaceholder.querySelector(".alert");
+      if (alert) alert.classList.remove("show");
+    }, 5000);
+  }
+
+  // ✅ Number helpers
+  function parseNumber(val) {
+    if (!val) return 0;
+    return Number(val.toString().replace(/,/g, "")); // remove commas before parsing
+  }
+
+  function formatNumber(num) {
+    return Number(num).toLocaleString("en-US"); // add commas for display
+  }
+
+  // ✅ Download PDF
+  document.getElementById("downloadPdf").addEventListener("click", function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+
+    // Left side: Company Name
+    doc.setFontSize(16);
+    doc.setFont(undefined, "bold");
+    doc.text("ALIMART", margin, 15);
+
+    // Right side: Report Title
+    const reportTitle = "Cash Flow Report";
+    doc.setFontSize(14);
+    doc.setFont(undefined, "bold");
+    const reportWidth = doc.getTextWidth(reportTitle);
+    doc.text(reportTitle, pageWidth - margin - reportWidth, 15);
+
+    // Right side: From / To Dates
+    const fromDate = document.getElementById("fromDate").value || "____";
+    const toDate = document.getElementById("toDate").value || "____";
+    doc.setFontSize(11);
+    doc.setFont(undefined, "normal");
+    const fromToText = `From: ${fromDate}   To: ${toDate}`;
+    const fromToWidth = doc.getTextWidth(fromToText);
+    doc.text(fromToText, pageWidth - margin - fromToWidth, 22);
+
+    // AutoTable with HTML table
+    doc.autoTable({
+      html: "#reportTable",
+      startY: 35,
+      theme: "grid",
+      headStyles: { fillColor: [220, 53, 69] },
+      styles: { fontSize: 10 },
+    });
+
+    // Signature Section
+    const finalY = doc.lastAutoTable.finalY || 40;
+    const lineWidth = 60;
+    const gap = 60;
+
+    doc.setFontSize(12);
+
+    doc.text("Prepared By", margin, finalY + 25);
+    doc.line(margin, finalY + 35, margin + lineWidth, finalY + 35);
+
+    const approvedX = margin + lineWidth + gap;
+    doc.text("Approved By", approvedX, finalY + 25);
+    doc.line(approvedX, finalY + 35, approvedX + lineWidth, finalY + 35);
+
+    const requiredX = approvedX + lineWidth + gap;
+    doc.text("Required By", requiredX, finalY + 25);
+    doc.line(requiredX, finalY + 35, requiredX + lineWidth, finalY + 35);
+
+    // Save PDF
+    doc.save("Cash_Flow_Report.pdf");
+  });
+
+  // ✅ Set max date to today
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("fromDate").setAttribute("max", today);
+  document.getElementById("toDate").setAttribute("max", today);
+
+  // ✅ Load Sidebar
+  fetch("sidebar.html")
+    .then((response) => response.text())
+    .then((html) => {
+      document.getElementById("sidebar-container").innerHTML = html;
+    });
+
+  $(document).ready(function () {
+    $("#getReportBtn").on("click", function () {
+      document.getElementById("downloadPdf").style.visibility = "visible";
+
+      const startDate = $("#fromDate").val();
+      const endDate = $("#toDate").val();
+
+      if (!startDate || !endDate) {
+        showInlineAlert("Please select both start and end dates.", "danger");
+        return;
+      }
+
+      // Send request
+      fetch(`${BASEURL}Reports/Cash`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_date: startDate,
+          end_date: endDate,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          generateTable(
+            data.ledger,
+            data.opening_balance,
+            data.closing_balance
+          );
+        })
+        .catch((err) => {
+          console.error("Error fetching cash flow data:", err);
+          showInlineAlert("Failed to load cash flow report.", "danger");
+        });
+    });
+  });
+
+  // ✅ Generate Table
+  function generateTable(entries, openingBalance, closingBalance) {
+    let balance = parseNumber(openingBalance);
+    let rows = "";
+
+    // Opening balance row
+    rows += `
+      <tr>
+        <th colspan="5" class="text-end">Opening Balance:</th>
+        <th>${formatNumber(balance)}</th>
+      </tr>
+    `;
+
+    // Ledger rows
+    entries.forEach((entry, index) => {
+      const dr = parseNumber(entry.debit);
+      const cr = parseNumber(entry.credit);
+      balance += dr - cr;
+
+      const rawDate = entry.date || "";
+      const formattedDate = rawDate ? new Date(rawDate).toISOString().split("T")[0] : "";
+
+      rows += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${formattedDate}</td>
+          <td>${entry.narration || ""}</td>
+          <td>${formatNumber(dr)}</td>
+          <td>${formatNumber(cr)}</td>
+          <td>${formatNumber(balance)}</td>
+        </tr>
+      `;
+    });
+
+    // Closing balance row
+    const finalClosing =
+      closingBalance && closingBalance !== null && closingBalance !== ""
+        ? parseNumber(closingBalance)
+        : balance;
+
+    rows += `
+      <tr>
+        <th colspan="5" class="text-end">Closing Balance:</th>
+        <th>${formatNumber(finalClosing)}</th>
+      </tr>
+    `;
+
+    const tableHtml = `
+      <table id="reportTable" class="table table-bordered table-striped mt-4">
+        <thead class="table-dark">
+          <tr>
+            <th>Sr.</th>
+            <th>Date</th>
+            <th>Narration</th>
+            <th>Dr.</th>
+            <th>Cr.</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+
+    $("#cashFlow").html(tableHtml);
+  }
+</script>
+
+  </body>
+</html>

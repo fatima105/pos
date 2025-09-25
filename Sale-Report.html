@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sales Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link href="scripts/select2.min.css" rel="stylesheet" />
+  <link href="scripts/jquery.dataTables.min.css" rel="stylesheet" />
+  <link href="scripts/buttons.dataTables.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    .main-container { display: flex; min-height: 100vh; }
+    #sidebar-container a { color: #fff; text-decoration: none; display: block; padding: 8px 0; }
+    #sidebar-container a:hover { text-decoration: none; }
+    .content-container { flex: 1; padding: 20px; background-color: #f8f9fa; }
+    .fw-bold { font-weight: bold; }
+    .table-summary td { font-size: 0.95rem; }
+    .table-secondary { background-color: #f1f1f1; }
+  </style>
+</head>
+<body>
+<div class="main-container">
+  <!-- Sidebar -->
+  <div id="sidebar-container"></div>
+
+  <!-- Main Content -->
+  <div class="content-container">
+    <h3 class="mb-4">Sales Report</h3>
+
+    <div class="row mb-3">
+      <div class="col-md-12 mb-3">
+        <label class="form-label fw-bold">Branch:</label>
+        <input type="text" value="Peshawar" class="form-control" readonly />
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label class="form-label fw-bold">From Date</label>
+        <input type="date" id="fromDate" class="form-control" />
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label class="form-label fw-bold">To Date</label>
+        <input type="date" id="toDate" class="form-control" />
+      </div>
+
+      <div class="col-md-6 mb-3">
+        <label class="form-label fw-bold">Filter</label>
+        <select id="filterType" class="form-select">
+          <option value="VoucherWise">Voucher Wise</option>
+          <option value="ItemWise">Item Wise</option>
+        </select>
+      </div>
+
+      <div class="col-md-6 d-flex align-items-end mb-3">
+        <button id="getReportBtn" class="btn btn-danger w-100">Get Report</button>
+      </div>
+    </div>
+
+    <!-- PDF Button -->
+    <div id="pdfBtnContainer" class="d-flex justify-content-end mb-3" style="display:none;">
+      <button id="downloadPdf" class="btn btn-danger btn-sm d-flex align-items-center">
+        <i class="fas fa-file-pdf fa-lg me-2"></i> PDF
+      </button>
+    </div>
+
+    <!-- Report Table -->
+    <div id="SalesReport"></div>
+  </div>
+</div>
+
+<!-- JS -->
+<script src="scripts/jquery-3.6.0.min.js"></script>
+<script src="scripts/bootstrap.bundle.min.js"></script>
+<script src="scripts/select2.min.js"></script>
+<script src="scripts/jquery.dataTables.min.js"></script>
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+<script>
+$(document).ready(function () {
+  fetch("sidebar.html")
+    .then(res => res.text())
+    .then(html => $("#sidebar-container").html(html));
+
+  $("#getReportBtn").on("click", async function () {
+    const startDate = $("#fromDate").val();
+    const endDate = $("#toDate").val();
+    const filterType = $("#filterType").val();
+console.log(`${startDate} < ${endDate} | Filter Type: ${filterType}`);
+
+    if (!startDate || !endDate || !filterType) {
+      alert("Please select both start and end dates.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASEURL}Reports/Sales`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ start_date: startDate, end_date: endDate, filter: filterType }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "API Error");
+
+      renderSalesReport(data, filterType, startDate, endDate);
+    } catch (err) {
+      console.error("Error fetching Sales Report:", err);
+      alert("Failed to load Sales Report.");
+    }
+  });
+});
+
+function renderSalesReport(apiResponse, filterType, startDate, endDate) {
+  const rows = apiResponse.data || [];
+  if (!rows.length) {
+    $("#SalesReport").html(`<div class="alert alert-warning">No records found.</div>`);
+    $("#pdfBtnContainer").hide();
+    return;
+  }
+
+  let tableHtml = "";
+  if (filterType === "VoucherWise") {
+    // Voucher Wise Table
+    tableHtml = `
+      <table id="salesTable" class="table table-bordered table-summary mt-2">
+        <thead class="table-dark">
+          <tr>
+            <th>Sr#</th>
+            <th>Date</th>
+            <th>Invoice #</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th class="text-end">Retail</th>
+            <th class="text-end">Discount</th>
+            <th class="text-end">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    rows.forEach((voucher, i) => {
+      const products = voucher.products || [];
+      tableHtml += `
+        <tr class="table-secondary fw-bold">
+          <td colspan="8">Invoice: ${voucher.invoice_no} </td>
+        </tr>
+      `;
+      products.forEach((p, j) => {
+        const price = (p.quantity * p.retail) - p.discount;
+        tableHtml += `
+          <tr>
+            <td>${i + 1}.${j + 1}</td>
+            <td>${voucher.sale_date}</td>
+            <td>${voucher.invoice_no}</td>
+            <td>${p.product_name}</td>
+            <td>${p.quantity}</td>
+            <td class="text-end">${p.retail.toFixed(2)}</td>
+            <td class="text-end">${p.discount.toFixed(2)}</td>
+            <td class="text-end">${price.toFixed(2)}</td>
+          </tr>`;
+      });
+    });
+
+  } else {
+    // Item Wise Table
+    tableHtml = `
+      <table id="salesTable" class="table table-bordered table-summary mt-2">
+        <thead class="table-dark">
+          <tr>
+            <th>Sr#</th>
+            <th>Product</th>
+            <th>Date</th>
+            <th>Invoice</th>
+            <th>Quantity</th>
+            <th class="text-end">Retail</th>
+            <th class="text-end">Discount</th>
+            <th class="text-end">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    rows.forEach((product, i) => {
+      const sales = product.sales || [];
+      tableHtml += `
+        <tr class="table-secondary fw-bold">
+          <td colspan="8">Product: ${product.product_name}</td>
+        </tr>
+      `;
+      sales.forEach((s, j) => {
+        const price = (s.quantity * s.retail) - s.discount;
+        tableHtml += `
+          <tr>
+            <td>${i + 1}.${j + 1}</td>
+            <td>${product.product_name}</td>
+            <td>${s.sale_date}</td>
+            <td>${s.invoice_no}</td>
+            <td>${s.quantity}</td>
+            <td class="text-end">${s.retail.toFixed(2)}</td>
+            <td class="text-end">${s.discount.toFixed(2)}</td>
+            <td class="text-end">${price.toFixed(2)}</td>
+          </tr>`;
+      });
+    });
+  }
+
+  tableHtml += `</tbody></table>`;
+  $("#SalesReport").html(tableHtml);
+  $("#pdfBtnContainer").show();
+
+  // PDF Export
+  document.getElementById("downloadPdf").onclick = function () {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+
+    doc.setFontSize(14);
+    doc.setFont(undefined, "bold");
+    doc.text("ALIMART", margin, 12);
+
+    const reportTitle = filterType === "voucher" ? "Sales Report (Voucher Wise)" : "Sales Report (Item Wise)";
+    const titleWidth = doc.getTextWidth(reportTitle);
+    doc.text(reportTitle, pageWidth - margin - titleWidth, 12);
+
+    doc.setFontSize(11);
+    doc.text(`From: ${startDate}   To: ${endDate}`, margin, 20);
+
+    doc.autoTable({
+      html: "#salesTable",
+      startY: 28,
+      theme: "grid",
+      headStyles: { fillColor: [220, 53, 69] },
+    });
+
+
+        // Prepared / Approved
+        const finalY = doc.lastAutoTable.finalY || 30;
+        const lineWidth = 70;
+        const spaceBetween = 50;
+        const startX = margin;
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text("Prepared By:", startX, finalY + 25);
+        doc.setFont(undefined, "normal");
+        doc.line(startX, finalY + 32, startX + lineWidth, finalY + 32);
+
+        const approvedX = startX + lineWidth + spaceBetween;
+        doc.setFont(undefined, "bold");
+        doc.text("Approved By:", approvedX, finalY + 25);
+        doc.setFont(undefined, "normal");
+        doc.line(approvedX, finalY + 32, approvedX + lineWidth, finalY + 32);
+
+    doc.save(`${filterType}_sales_report.pdf`);
+  };
+}
+</script>
+</body>
+</html>

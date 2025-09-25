@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purchase Return Details</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+
+    <style>
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+        border: none !important;
+        box-shadow: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-white py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Purchase Return Details</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="view-Purchase-return.html" class="text-primary text-decoration-none">Purchase Return</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">Purchase Return Details</li>
+              </ol>
+            </nav>
+          </div>
+
+          <div class="card shadow-lg mt-5">
+            <div class="container mt-4 mb-4">
+              <div class="row">
+                <!-- Left Side -->
+                <div class="col-md-6 col-sm-6">
+                  <p><strong>Voucher:</strong> <span class="ms-2" id="voucher_no"></span></p>
+                  <p><strong>Purchase Date:</strong> <span class="ms-2" id="Purchase_date"></span></p>
+                </div>
+                <!-- Right Side -->
+                <div class="col-md-6 col-sm-6">
+                  <p><strong>Supplier:</strong><span class="ms-2" id="supplier_name"></span></p>
+                  <p><strong>Return Date:</strong> <span class="ms-2" id="Purchase_return_date"></span></p>
+                </div>
+              </div>
+              <hr class="mt-2 mb-2" />
+            </div>
+
+            <!-- Product Table -->
+            <div class="table-responsive p-4">
+              <table class="table table-bordered" id="PurchaseTable">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Reason</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="PurchaseReturnTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/jquery.dataTables.min.js"></script>
+    <script src="scripts/dataTables.buttons.min.js"></script>
+    <script src="scripts/jszip.min.js"></script>
+    <script src="scripts/pdfmake.min.js"></script>
+    <script src="scripts/vfs_fonts.js"></script>
+    <script src="scripts/buttons.html5.min.js"></script>
+    <script src="scripts/buttons.print.min.js"></script>
+    <script src="config.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load Footer
+        fetch("scripts/footer.html")
+          .then((response) => response.text())
+          .then((data) => {
+            document.getElementById("footer-container").innerHTML = data;
+            const yearEl = document.getElementById("year");
+            if (yearEl) yearEl.textContent = new Date().getFullYear();
+          })
+          .catch((error) => console.error("Error loading footer:", error));
+
+        // Load Sidebar
+        fetch("sidebar.html")
+          .then((response) => response.text())
+          .then((html) => {
+            document.getElementById("sidebar-container").innerHTML = html;
+          });
+
+        // Initialize load of Purchase return details
+        loadPurchaseReturnDetails();
+      });
+
+      function getQueryParam(param) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(param);
+      }
+
+      function loadPurchaseReturnDetails() {
+        const purchase_return_id = getQueryParam("id");
+        if (!purchase_return_id) return console.error("No Purchase ID provided.");
+
+        fetch(`${BASEURL}purchaseReturnRoutes/specificdetails`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: purchase_return_id }),
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error("Failed to fetch data.");
+            return response.json();
+          })
+          .then((data) => {
+            const products = data.data || [];
+
+            document.getElementById("voucher_no").textContent =  products[0].voucher_no || "";
+            document.getElementById("Purchase_date").textContent =  products[0].purchase_date || "";
+            document.getElementById("Purchase_return_date").textContent =  products[0].return_date || "";
+            document.getElementById("supplier_name").textContent = products[0].name || "";
+
+            const tbody = document.getElementById("PurchaseReturnTableBody");
+            tbody.innerHTML = "";
+
+            products
+         
+            .forEach((item) => {
+              tbody.innerHTML += `
+                <tr>
+                  <td>${item.product_name || ""}</td>
+                  <td>${item.narration || ""}</td>
+                  <td>${item.purchase_amount || 0}</td>
+                  <td>${item.quantity || 0}</td>
+                  <td>${item.net_amount || 0}</td>
+                </tr>
+              `;
+            });
+
+            $("#PurchaseTable").DataTable({
+              responsive: true,
+              destroy: true,
+              dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+              buttons: [
+                { extend: "copy", className: "btn btn-sm" },
+                { extend: "csv", className: "btn btn-sm" },
+                { extend: "excel", className: "btn btn-sm" },
+                { extend: "pdf", className: "btn btn-sm" },
+                { extend: "print", className: "btn btn-sm" },
+              ],
+            });
+          })
+          .catch((err) => console.error("Fetch error:", err));
+      }
+    </script>
+  </body>
+</html>

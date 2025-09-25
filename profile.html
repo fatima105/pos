@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Electron Bootstrap Sidebar</title>
+
+    <!-- Bootstrap CSS -->
+   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-light py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Edit Profile</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li
+                  class="breadcrumb-item active text-muted"
+                  aria-current="page"
+                >
+                  My Profile
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <!-- Profile Edit Section -->
+          <div class="d-flex justify-content-center align-items-center vh-100">
+            <div
+              class="card p-4 shadow-lg"
+              style="width: 50%; max-width: 500px"
+            >
+              <h3 class="text-center">Edit Profile</h3>
+              <form>
+                <div class="mb-3">
+                  <label class="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    value=""
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Mobile</label>
+                  <input type="text" class="form-control" value="" />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Email</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    value=""
+                    disabled
+                  />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Profile Pic</label>
+                  <input type="file" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                  Submit
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+
+    <script src="scripts/scripts.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load Footer
+        fetch("scripts/footer.html")
+          .then((response) => response.text())
+          .then((data) => {
+            document.getElementById("footer-container").innerHTML = data;
+            document.getElementById("year").textContent =
+              new Date().getFullYear();
+          })
+          .catch((error) => console.error("Error loading footer:", error));
+
+        // Load Sidebar
+        fetch("sidebar.html")
+          .then((response) => response.text())
+          .then(
+            (html) =>
+              (document.getElementById("sidebar-container").innerHTML = html)
+          );
+      });
+    </script>
+  </body>
+</html>

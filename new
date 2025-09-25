@@ -1,0 +1,53 @@
+  // Check if a message exists in sessionStorage
+  const message = sessionStorage.getItem('globalAlertMessage');
+  const type = sessionStorage.getItem('globalAlertType') || 'info';
+
+  if (message) {
+    showInlineAlert(message, type);
+
+    // Clear so it doesn’t keep showing again on refresh
+    sessionStorage.removeItem('globalAlertMessage');
+    sessionStorage.removeItem('globalAlertType');
+  }
+
+
+    loadCustomers();
+
+
+    async function loadCustomers() {
+  try {
+    const response = await fetch(`${BASEURL}Customer`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+    const customerList = data.Customer || [];
+    const select = $('#customer_id');
+
+    // Clear previous options
+    select.empty();
+
+    // Add placeholder/default option
+    select.append(new Option('--Choose Customer--', '', true, true));
+
+    // Populate customer options dynamically
+    customerList.forEach(customer => {
+      select.append(new Option(customer.name, customer.id));
+    });
+
+    // Initialize Select2 with search enabled
+    if ($.fn.select2) {
+      select.select2({
+        placeholder: '--Choose Customer--',
+        allowClear: true,
+          dropdownParent: $('#paymentModal'),
+        width: 'resolve',        // ensures full width
+        matcher: matchStart      // optional: custom search starting with typed text
+      });
+    }
+
+  } catch (error) {
+    console.error('Error fetching Customer data:', error);
+  }
+}
+   
+        

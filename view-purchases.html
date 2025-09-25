@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Purchases</title>
+
+    <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- DataTables CSS -->
+<!-- Local DataTables CSS -->
+<link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  
+
+    <style>
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+    </style>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Delete Confirmation Modal -->
+ 
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-white py-3">
+          <div class="row">
+               <div class="col-md-6 mb-3">
+                          <select id="product_id" class="form-select " >
+                            <option>--Choose Product--</option>
+                        </select>
+                        </div>
+
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Purchases</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">
+                  Purchases
+                </li>
+              </ol>
+            </nav>
+          </div>
+    <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+      
+          <div class="card shadow-lg mt-5">
+            <div class="container mt-4 mb-4">
+              <div class="container mt-3">
+                <div class="d-flex justify-content-end">
+                  <a
+                    href="add-Purchase.html"
+                    class="text-decoration-none btn btn-primary btn-sm d-flex align-items-center px-2 py-2"
+                  >
+                    <i class="fa-solid fa-plus me-1"></i> Add Purchase
+                  </a>
+                </div>
+                <hr class="mt-2" />
+              </div>
+
+              <table id="PurchaseTable" class="table table-striped table-bordered mt-5">
+                <thead class="table-light text-dark">
+                  <tr>
+                    <th>Code</th>
+                    <th>Supplier</th>
+                    <th>Invoice</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Payment Status</th>
+                    <th>Added By</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="purchase-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <!-- DataTables -->
+ <script src="scripts/jquery.dataTables.min.js"></script>
+<script src="scripts/dataTables.buttons.min.js"></script>
+<script src="scripts/jszip.min.js"></script>
+<script src="scripts/pdfmake.min.js"></script>
+<script src="scripts/vfs_fonts.js"></script>
+<script src="scripts/buttons.html5.min.js"></script>
+<script src="scripts/buttons.print.min.js"></script>
+<script src="config.js"></script>
+    <!-- Bootstrap -->
+
+    <!-- Font Awesome (optional for icons) -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<script>
+  // Load Products Dropdown
+  async function loadProducts() {
+    try {
+      const response = await fetch(`${BASEURL}Product`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const select = document.getElementById('product_id');
+      select.innerHTML = '';
+
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = '--Choose Product--';
+      select.appendChild(defaultOption);
+
+      if (data.Product && data.Product.length > 0) {
+        data.Product.forEach(product => {
+          const option = document.createElement('option');
+          option.value = product.id;
+          option.textContent = product.name;
+          option.setAttribute('data-unit', product.unit_name || 'N/A');
+          select.appendChild(option);
+        });
+      } else {
+        const noProductOption = document.createElement('option');
+        noProductOption.disabled = true;
+        noProductOption.textContent = 'No Product found';
+        select.appendChild(noProductOption);
+      }
+    } catch (error) {
+      console.error('Error fetching Product data:', error);
+    }
+  }
+
+  // Load Purchases (All or Filtered)
+  async function loadPurchases(productId = '') {
+    const url = productId ? `${BASEURL}Purchase/DetailProduct` : `${BASEURL}Purchase`;
+    const fetchOptions = productId
+      ? {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id: productId })
+        }
+      : { method: 'GET' };
+
+    try {
+      const response = await fetch(url, fetchOptions);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("API Response:", data);
+      purchaseTable.clear();
+
+      const purchases = Array.isArray(data)
+        ? data
+        : Array.isArray(data.Purchase)
+        ? data.Purchase
+        : data.Purchase
+        ? [data.Purchase]
+        : [];
+
+      purchases.forEach(purchase => {
+        purchaseTable.row.add([
+          purchase.voucher_no || "",
+          purchase.supplier_name || purchase.name,
+          purchase.invoice_no || "",
+          purchase.purchase_date
+            ? new Date(purchase.purchase_date).toLocaleDateString()
+            : "",
+          purchase.amount || "",
+          purchase.payment_status || "",
+          purchase.user_id || "",
+          `
+          <div class="d-flex gap-2">
+            <a href="specific.html?id=${purchase.id}" class="btn btn-sm">
+              <i style="color:blue;" class="fas fa-eye"></i>
+            </a>
+            <a href="return-purchase.html?id=${purchase.id}" class="btn btn-sm">
+              <i class="fas fa-rotate-left" style="color:#0084ff;"></i>
+            </a>
+          </div>
+          `,
+        ]);
+      });
+
+      purchaseTable.draw();
+    } catch (error) {
+      console.error("Error fetching purchase data:", error);
+      document.getElementById("purchase-body").innerHTML =
+        '<tr><td colspan="7" class="text-center text-danger">Failed to load data. Please check the console for details.</td></tr>';
+    }
+  }
+
+  // DOM Ready
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Load Footer
+    fetch("scripts/footer.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("footer-container").innerHTML = html;
+        document.getElementById("year").textContent = new Date().getFullYear();
+      });
+
+    // Load Sidebar
+    fetch("sidebar.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("sidebar-container").innerHTML = html;
+      });
+
+    // Initialize DataTable
+    window.purchaseTable = $("#PurchaseTable").DataTable({
+      dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+      buttons: [
+        { extend: "copy", className: "btn btn-sm" },
+        { extend: "csv", className: "btn btn-sm" },
+        { extend: "excel", className: "btn btn-sm" },
+        { extend: "pdf", className: "btn btn-sm" },
+        { extend: "print", className: "btn btn-sm" },
+      ],
+        order: []  
+    });
+
+    // Load products and initial purchases
+    await loadProducts();
+    await loadPurchases();
+
+    // Filter purchases on product change
+    document.getElementById("product_id").addEventListener("change", function () {
+      const selectedProductId = this.value;
+      loadPurchases(selectedProductId);
+    });
+  });
+</script>
+
+  </body>
+</html>

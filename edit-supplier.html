@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Electron Edit Supplier</title>
+
+    <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Edit Supplier</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="view-suppliers.html" class="text-primary text-decoration-none">Suppliers</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">Edit</li>
+              </ol>
+            </nav>
+          </div>
+   <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <!-- Profile Edit Section -->
+          <div class="d-flex justify-content-center align-items-center vh-100">
+            <div class="card p-0 shadow-lg bg-white" style="width: 80%; max-width: 500px">
+              <form  action="" id="SupplierUpdate">
+                <!-- Hidden input to store Supplier ID -->
+                <input type="hidden" id="SupplierId" />
+
+                <div class="row p-4">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      Name <span class="text-danger fw-bold">*</span>
+                    </label>
+                    <input type="text" id="name" class="form-control" required />
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      Branch <span class="text-danger fw-bold">*</span>
+                    </label>
+                    <select class="form-select">
+                      <option value="Peshawar">Peshawar</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      Email <span class="text-danger fw-bold">*</span>
+                    </label>
+                    <input id="email" type="email" class="form-control" disabled required />
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      Mobile <span class="text-danger fw-bold">*</span>
+                    </label>
+                    <input id="contact" type="tel" pattern="[0-9]{10}" maxlength="10" class="form-control" required />
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      CNIC <span class="text-danger fw-bold">*</span>
+                    </label>
+                    <input id="cnic" type="text" class="form-control" disabled required />
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      City <span class="text-danger fw-bold">*</span>
+                    </label>
+                    <input id="city" type="text" class="form-control" required />
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">City Area</label>
+                    <input id="city_area" type="text" class="form-control" />
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      Status <span class="text-danger fw-bold">*</span>
+                    </label>
+                    <select id="status" class="form-select">
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Block</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="bg-light py-1 px-3 border-top rounded-bottom d-flex justify-content-start">
+                  <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- JS Scripts -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+ <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/scripts.js"></script>
+    <script src="config.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // Load Footer
+        fetch("scripts/footer.html")
+          .then((res) => res.text())
+          .then((data) => {
+            document.getElementById("footer-container").innerHTML = data;
+            const yearEl = document.getElementById("year");
+            if (yearEl) yearEl.textContent = new Date().getFullYear();
+          })
+          .catch((err) => console.error("Error loading footer:", err));
+
+        // Load Sidebar
+        fetch("sidebar.html")
+          .then((res) => res.text())
+          .then((html) => {
+            document.getElementById("sidebar-container").innerHTML = html;
+          });
+
+        // Get Supplier ID from URL
+        function getQueryParam(param) {
+          const urlParams = new URLSearchParams(window.location.search);
+          return urlParams.get(param);
+        }
+
+        const SupplierId = getQueryParam("id");
+        if (SupplierId) {
+          document.getElementById("SupplierId").value = SupplierId;
+          const apiUrl = `${BASEURL}Supplier/${SupplierId}`;
+
+          fetch(apiUrl)
+            .then((res) => {
+              if (!res.ok) throw new Error("Network response was not ok");
+              return res.json();
+            })
+            .then((data) => {
+              if (data && typeof data === "object") {
+                const { name, status, email, cnic, contact, city, city_area } = data;
+                document.getElementById("name").value = name || "";
+                document.getElementById("status").value = status || "Active";
+                document.getElementById("email").value = email || "";
+                document.getElementById("cnic").value = cnic || "";
+                document.getElementById("contact").value = contact || "";
+                document.getElementById("city").value = city || "";
+                document.getElementById("city_area").value = city_area || "";
+              } else {
+                throw new Error("Invalid data format");
+              }
+            })
+            .catch((err) => {
+              console.error("Error fetching Supplier data:", err);
+            });
+        } else {
+          console.log("No Supplier ID found in the URL.");
+        }
+      });
+
+
+
+
+
+
+
+          // Submit handler
+    document.getElementById("SupplierUpdate").addEventListener("submit", (e) => {
+      e.preventDefault();
+     
+      const name = document.getElementById("name").value.trim();
+      const contact = document.getElementById("contact").value.trim();
+      const status = document.getElementById("status").value;
+      const city= document.getElementById("city").value;
+      const city_area= document.getElementById("city_area").value;
+      const SupplierId = document.getElementById("SupplierId").value;
+
+      const requestBody = { id: SupplierId, name, contact, status, city, city_area };
+
+console.log("Request Body:", requestBody);
+      fetch(`${BASEURL}Supplier`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: SupplierId, name, contact, status,city,city_area})
+      })
+        .then((res) => res.json())
+        .then((data) => {
+       
+         
+                     localStorage.setItem('globalAlertMessage',"Supplier Data Updated");
+localStorage.setItem('globalAlertType', 'success');
+            window.location.href = "view-suppliers.html";
+         
+        })
+        .catch((err) => {
+          console.error("Error:", err);
+                   localStorage.setItem('globalAlertMessage',"Failed to update Supplier");
+localStorage.setItem('globalAlertType', 'danger');
+
+        });
+    });
+    </script>
+  </body>
+</html>

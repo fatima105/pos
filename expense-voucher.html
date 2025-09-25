@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expenses</title>
+
+    <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- DataTables CSS -->
+<!-- Local DataTables CSS -->
+<link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  
+
+    <style>
+      .bg-buttons {
+        background-color: #6c757d;
+        color: #e9ecef;
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+
+      .bg-buttons .btn {
+        background-color: #6c757d;
+        color: #e9ecef;
+        outline: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+    </style>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+     
+ 
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-white py-3">
+     
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">Expenses</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">
+                  Expenses
+                </li>
+              </ol>
+            </nav>
+          </div>
+    <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+      
+          <div class="card shadow-lg mt-5">
+            <div class="container mt-4 mb-4">
+              <div class="container mt-3">
+                
+                <div class="d-flex justify-content-end">
+                  <a
+                    href="add-expense.html"
+                    class="text-decoration-none btn btn-primary btn-sm d-flex align-items-center px-2 py-2"
+                  >
+                    <i class="fa-solid fa-plus me-1"></i> Add Expense
+                  </a>
+                </div>
+                <hr class="mt-2" />
+                <div id="alertPlaceholder"></div>
+              </div>
+
+              <table id="ExpenseTable" class="table table-striped table-bordered mt-5">
+                <thead class="table-light text-dark">
+                  <tr>
+                    <th>Voucher No</th>
+                     <th>Date</th>
+                        <th>Remarks</th>
+                        <th>Amount</th>
+                        <th>Paid From</th>
+                    <th>User id</th>
+                   
+                    <th>Action</th>
+                 
+            
+                  </tr>
+                </thead>
+                <tbody id="expense-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <!-- DataTables -->
+ <script src="scripts/jquery.dataTables.min.js"></script>
+<script src="scripts/dataTables.buttons.min.js"></script>
+<script src="scripts/jszip.min.js"></script>
+<script src="scripts/pdfmake.min.js"></script>
+<script src="scripts/vfs_fonts.js"></script>
+<script src="scripts/buttons.html5.min.js"></script>
+<script src="scripts/buttons.print.min.js"></script>
+<script src="config.js"></script>
+    <!-- Bootstrap -->
+
+    <!-- Font Awesome (optional for icons) -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+<script>
+  function showInlineAlert(message, type = 'info') {
+  const alertPlaceholder = document.getElementById('alertPlaceholder');
+  const alertHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  alertPlaceholder.innerHTML = alertHTML;
+
+  // Optional: Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    const alert = alertPlaceholder.querySelector('.alert');
+    if (alert) alert.classList.remove('show');
+  }, 5000);
+}
+
+  async function loadExpenses() {
+    const url = `${BASEURL}expenses`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      // Clear previous data
+      ExpenseTable.clear();
+
+      const expenses = Array.isArray(result.data) ? result.data : [];
+
+      expenses.forEach(exp => {
+        ExpenseTable.row.add([
+          exp.voucher_no || "",
+          exp.date ? new Date(exp.date).toLocaleDateString() : "",
+         exp.remarks, 
+        exp.amount, 
+          exp.paid_from || "",
+          exp.user_id || "",
+          `
+            <div class="d-flex gap-2">
+              <a href="specific-voucher.html?id=${exp.id}" class="btn btn-sm">
+                <i class="fas fa-eye" style="color:blue;"></i>
+              </a>
+          
+            </div>
+          `
+        ]);
+      });
+
+      ExpenseTable.draw();
+
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+      document.getElementById("expense-body").innerHTML =
+        '<tr><td colspan="7" class="text-center text-danger">Failed to load data. Check console for details.</td></tr>';
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", async function () {
+    // Load Footer
+    fetch("scripts/footer.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("footer-container").innerHTML = html;
+        document.getElementById("year").textContent = new Date().getFullYear();
+      });
+
+    // Load Sidebar
+    fetch("sidebar.html")
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById("sidebar-container").innerHTML = html;
+      });
+
+    // Initialize DataTable
+    window.ExpenseTable = $("#ExpenseTable").DataTable({
+      dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+      buttons: [
+        { extend: "copy", className: "btn btn-sm" },
+        { extend: "csv", className: "btn btn-sm" },
+        { extend: "excel", className: "btn btn-sm" },
+        { extend: "pdf", className: "btn btn-sm" },
+        { extend: "print", className: "btn btn-sm" },
+      ],
+    });
+
+    await loadExpenses();
+  });
+
+
+</script>
+
+
+  </body>
+</html>

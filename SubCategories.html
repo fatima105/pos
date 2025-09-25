@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SubCategories</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- DataTables CSS -->
+ <!-- Local DataTables CSS -->
+<link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="scripts/style.css" />
+
+  <style>
+    .bg-buttons {
+      background-color: #6c757d;
+      color: #e9ecef;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    .bg-buttons .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <div id="sidebar-container"></div>
+
+    <div class="content-container">
+      <div class="container-fluid bg-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">SubCategories</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item">
+                <a href="index.html" class="text-primary text-decoration-none">Home</a>
+              </li>
+              <li class="breadcrumb-item active text-muted" aria-current="page">SubCategories</li>
+            </ol>
+          </nav>
+        </div>
+   <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+        <div class="card shadow-lg mt-5">
+          <div class="container mt-4 mb-4">
+            <div class="d-flex justify-content-end mb-3">
+              <a href="add-subcategory.html" class="btn btn-primary btn-sm d-flex align-items-center px-3 py-2">
+                <i class="fa-solid fa-plus me-1"></i> Add SubCategory
+              </a>
+            </div>
+            <hr class="mt-2" />
+<div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+            <table id="subCategoryTable" class="table table-striped table-bordered mt-5">
+              <thead class="table-light text-dark">
+                <tr>
+                  <th>No</th>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Parent Category</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="subCategoryTableBody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="footer-container"></div>
+    </div>
+  </div>
+
+  <!-- jQuery -->
+    <!-- jQuery -->
+    <script src="scripts/jquery-3.6.0.min.js"></script>
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+  <!-- DataTables -->
+    <!-- DataTables -->
+ <script src="scripts/jquery.dataTables.min.js"></script>
+<script src="scripts/dataTables.buttons.min.js"></script>
+<script src="scripts/jszip.min.js"></script>
+<script src="scripts/pdfmake.min.js"></script>
+<script src="scripts/vfs_fonts.js"></script>
+<script src="scripts/buttons.html5.min.js"></script>
+<script src="scripts/buttons.print.min.js"></script>
+  <!-- Sidebar Loader -->
+  <script>
+    fetch("sidebar.html")
+      .then((res) => res.text())
+      .then((html) => (document.getElementById("sidebar-container").innerHTML = html));
+  </script>
+ <script src="config.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      loadSubCategories();
+    });
+
+    async function loadSubCategories() {
+      const apiUrl = `${BASEURL}SubCategory`;
+
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        const tbody = document.getElementById("subCategoryTableBody");
+        tbody.innerHTML = "";
+
+        if (data.SubCategory && data.SubCategory.length > 0) {
+          data.SubCategory.forEach((item, index) => {
+            const row = `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${item.name}</td>
+                <td>${item.description}</td>
+                <td>${item.category_name}</td>
+                <td>
+                  ${item.status === 'Active'
+                    ? `<span class="badge text-dark d-flex align-items-center">
+                        <button class="btn btn-sm btn-success rounded-circle me-1">
+                          <i class="fa-solid fa-check"></i>
+                        </button>Active</span>`
+                    : `<span class="badge text-dark d-flex align-items-center">
+                        <button class="btn btn-sm btn-danger rounded-circle me-1">
+                          <i class="fa-solid fa-ban"></i>
+                        </button>Block</span>`
+                  }
+                </td>
+                <td>
+                  <div class="d-flex gap-2">
+                    <a href="edit-subcategory.html?id=${item.id}" class="btn btn-sm">
+                      <i style="color:blue;" class="fas fa-edit"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>`;
+            tbody.innerHTML += row;
+          });
+
+          $('#subCategoryTable').DataTable({
+            destroy: true, // ensures re-initialization is safe
+            dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+            buttons: [
+              { extend: "copy", className: "btn btn-sm" },
+              { extend: "csv", className: "btn btn-sm" },
+              { extend: "excel", className: "btn btn-sm" },
+              { extend: "pdf", className: "btn btn-sm" },
+              { extend: "print", className: "btn btn-sm" },
+            ],
+              order: []  
+          });
+
+        } else {
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center">No data found</td></tr>`;
+        }
+      } catch (error) {
+        console.error("Error fetching SubCategory data:", error);
+      }
+    }
+  </script>
+</body>
+</html>

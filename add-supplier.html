@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+
+    <!-- Bootstrap CSS -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-gray py-1">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Add Supplier</h4>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                  <a href="view-suppliers.html" class="text-primary text-decoration-none"
+                    >Suppliers</a
+                  >
+                </li>
+                <li
+                  class="breadcrumb-item active text-muted"
+                  aria-current="page"
+                >
+                  Add
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <!-- Profile Edit Section -->
+          <div class="d-flex justify-content-center align-items-center vh-100">
+            <div
+              class="card p-4 shadow-lg bg-white"
+              style="width: 80%; max-width: 500px"
+            >
+       
+              <form action="" id="SupplierAdd">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"
+                      >Name <span class="text-danger fw-bold">*</span></label
+                    >
+                    <input id="name" type="text" class="form-control" required />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"
+                      >Branch <span class="text-danger  fw-bold">*</span></label
+                    >
+                    <select id="branch" class="form-select">
+                      <option>Peshawar</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"
+                      >CNIC <span class="text-danger ">*</span></label
+                    >
+                    <input id="cnic" maxlength="13"type="text" class="form-control" required />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"
+                      >Email <span class="text-danger  fw-bold">*</span></label
+                    >
+                    <input id="email"type="email" class="form-control" required />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"
+                      >Mobile <span class="text-danger  fw-bold">*</span></label
+                    >
+                    <input  id="mobile_no" type="text" class="form-control" required />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"
+                      >City <span class="text-danger  fw-bold">*</span></label
+                    >
+                    <input id="city"type="text" class="form-control" required />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">City Area</label>
+                    <input id="city_area" required type="text" class="form-control" />
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"
+                      >Status <span class="text-danger  fw-bold">*</span></label
+                    >
+                    <select id="status">
+                      <option>Active</option>
+                      <option>Block</option>
+                    </select>
+                
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+    <div class="modal fade" id="ErrorModal" tabindex="-1" aria-labelledby="ErrorModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-danger" id="ErrorModalLabel">
+              <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+              Please check your errors
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="error-message"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Okay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+ 
+
+   
+    <!-- Bootstrap JS -->  
+     <script src="scripts/jquery-3.6.0.min.js"></script>
+ <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="scripts/scripts.js"></script>
+     <script src="config.js"></script>
+    <script src="scripts/Supplierscripts.js"></script>
+
+
+
+
+    
+    
+  </body>
+</html>
