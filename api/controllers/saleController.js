@@ -4,14 +4,17 @@ const db = require('../db');
 exports.getAllSale = (req, res) => {
   const query = `
     SELECT 
-      sale.*, 
-      customer.name AS customer_name 
+      s.*,
+      sd.amount AS total_discount,
+      c.name AS customer_name 
     FROM 
-      sale 
+      sale s
     LEFT JOIN 
-      customer ON sale.customer_id = customer.id 
+      customer c ON s.customer_id = c.id
+    LEFT JOIN 
+      Sale_Discount sd ON s.id = sd.sale_id
     ORDER BY 
-      sale.id DESC
+      s.id DESC
   `;
 
   db.all(query, [], (err, rows) => {
@@ -21,6 +24,7 @@ exports.getAllSale = (req, res) => {
     res.json({ Sale: rows });
   });
 };
+
 exports.getSpecificSaleDetail = (req, res) => {
   const { id } = req.params;
   console.log("➡️ API called: getSpecificSaleDetail with sale_id =", id);

@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sale Register</title>
+  <link href="scripts/select2.min.css" rel="stylesheet" />
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Local DataTables CSS -->
+  <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+
+  <style>
+    .btn {
+      padding: 10px;
+      transition: all 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #045f54;
+      color: #e6f7f5;
+    }
+
+    .nav-icon {
+      color: #045f54;
+    }
+
+    .nav-icon:hover {
+      color: #e6f7f5;
+    }
+
+    .bg-as {
+      background-color: #6c757d;
+      color: #e9ecef;
+    }
+
+    .bg-as .btn {
+      background-color: #6c757d;
+      color: #e9ecef;
+      outline: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  </style>
+
+  <link rel="stylesheet" href="scripts/style.css" />
+</head>
+
+<body>
+  <div class="main-container">
+    <div class="container-fluid bg-white p-0 m-0">
+      <div class="row g-2 m-0">
+        <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+          <a class="btn border border-success w-100 rounded-3 d-flex align-items-center justify-content-center gap-2"
+            href="index.html">
+            <i class="fa-solid fa-home nav-icon"></i>
+            <span>Home</span>
+          </a>
+        </div>
+        <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+          <a class="btn border border-success w-100 rounded-3 d-flex align-items-center justify-content-center gap-2"
+            href="view-sales.html">
+            <i class="fa-solid fa-database nav-icon"></i>
+            <span>Sales</span>
+          </a>
+        </div>
+        <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+          <a class="btn border border-success w-100 rounded-3 d-flex align-items-center justify-content-center gap-2"
+            href="#">
+            <i class="fa-solid fa-cash-register nav-icon"></i>
+            <span>Cashier</span>
+          </a>
+        </div>
+        <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+          <a class="btn border border-success w-100 rounded-3 d-flex align-items-center justify-content-center gap-2"
+            href="view-sales-returns.html">
+            <i class="fa-solid fa-file-invoice nav-icon"></i>
+            <span>Sales Return</span>
+          </a>
+        </div>
+        <div class="col-6 col-sm-4 col-md-2 col-lg-1">
+          <a class="btn border border-success w-100 rounded-3 d-flex align-items-center justify-content-center gap-2"
+            href="Draft.html">
+            <i class="fa-solid fa-file-invoice nav-icon"></i>
+            <span>Drafts</span>
+          </a>
+        </div>
+      </div>
+
+
+      <div class="container-fluid bg-gray">
+        <div class="card mt-3">
+          <div class="card-header py-3 text-white" style="background:#045f54;">
+            <h5 class="mb-0">ORDERED PRODUCTS</h5>
+          </div>
+          <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x mt-4"
+            style="z-index: 1055; width: 400px; max-width: 90%;"></div>
+
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <select id="product_id" class="form-select">
+                  <option>--Choose Product--</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <input type="text" id="barcode" name="barcode" class="form-control" placeholder="Barcode">
+              </div>
+              <div class="col-md-4 mb-3">
+                <button id="clearAll" type="button" class="btn btn-primary w-100">Clear All</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered text-center align-middle" id="productTable">
+                <thead class="bg-secondary text-white">
+                  <tr class="bg-gray">
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Unit</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Total</th>
+                    <!-- <th>Purchase Average Amount</th>
+                 <th>Profit</th> -->
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="product-rows">
+                  <!-- JS will append <tr> rows here -->
+                </tbody>
+                <tfoot class="bg-light">
+                  <tr>
+                    <td colspan="6" class="text-end fw-bold">Grand Total:</td>
+                    <td>
+
+                      <input type="text" id="total" class="form-control bg-grey fw-bold" readonly />
+                    </td>
+                    <!-- <td>  <input type="text" id="total-profit"class="form-control bg-grey fw-bold"  value="" readonly />
+</td> -->
+                    <!-- <td></td> -->
+                  </tr>
+
+
+                </tfoot>
+              </table>
+              <div id="draftModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+  background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+                <div style="background:white; padding:20px; border-radius:8px; width:300px;">
+                  <h4>Enter Draft Name</h4>
+                  <input type="text" id="draftNameInput" placeholder="" value="" style="width:100%; padding:8px;" />
+                  <div style="margin-top:10px; text-align:right;">
+                    <button onclick="closeDraftModal()">Cancel</button>
+                    <button onclick="submitDraft()">Submit</button>
+                  </div>
+                </div>
+              </div>
+
+
+            </div>
+
+
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+  </div>
+
+
+  <!-- JS Scripts -->
+  <script src="scripts/scripts.js"></script>
+  <script src="receiptPrinter.js"></script>
+  <!-- Local jQuery -->
+  <script src="scripts/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Local Select2 JS -->
+  <script src="scripts/select2.min.js"></script>
+
+  <script src="config.js"></script>
+  <script>
+    let productsToSubmit = []
+    // Add Pay Now button row
+    function addPayNowButtonRow() {
+      // First remove any existing pay-now-row
+      const existingPayNowRow = document.querySelector('.pay-now-row');
+      if (existingPayNowRow) {
+        existingPayNowRow.remove();
+      }
+
+      // Create Pay Now row (keep it unchanged)
+      const payNowRow = document.createElement('tr');
+      payNowRow.className = 'pay-now-row';
+      payNowRow.innerHTML = `
+      <td colspan="8" class="text-right">
+        <button class="btn btn-primary" id="payNowBtn">Pay Now</button>
+       <button class="btn btn-secondary ml-2" id="addToDraftBtn" ${sessionId ? 'disabled' : ''}>Add To Drafts</button>
+      </td>
+    `;
+
+      // Append Pay Now row (with both buttons in one row)
+      productRows.appendChild(payNowRow);
+      document.getElementById("addToDraftBtn").addEventListener("click", async () => {
+
+        const rows = document.querySelectorAll("#productTable tbody tr");
+        const products = [];
+
+        rows.forEach(row => {
+          const productId = row.querySelector('input[name="product_ids[]"]')?.value;
+          const quantity = row.querySelector('input[name="quantities[]"]')?.value;
+          const retail = row.querySelector('input[name="prices[]"]')?.value;
+          const discount = row.querySelector('input[name="discounts[]"]')?.value;
+          const unitName = row.querySelector('input.unit')?.value;
+
+          if (productId && quantity && retail) {
+            products.push({
+              product_id: parseInt(productId),
+              quantity: parseFloat(quantity),
+              retail: parseFloat(retail),
+              discount: parseFloat(discount || 0),
+              unit_name: unitName
+            });
+          }
+        });
+
+        const bodyData = {
+          user_id: 1,
+          location_id: 1,
+          products,
+          status: "draft"
+        };
+
+        await fetch(`${BASEURL}Order/InsertDraft`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyData)
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error("Failed to add products to draft.");
+            }
+            return response.json(); // optional, if your backend returns a message
+          })
+          .then(data => {
+
+            showInlineAlert('Products successfully added to draft', 'success');
+
+            selectedProductIds = [];
+
+
+            // Get the table body (assumes your table has a <tbody>)
+            const table = document.getElementById('productTable');
+            const tbody = table.querySelector('tbody');
+
+            // Clear all rows in the tbody
+            if (tbody) {
+
+              const Total = document.getElementById('total');
+
+              Total.value = '';
+              tbody.innerHTML = '';
+            } else {
+
+
+              // If there's no <tbody>, remove all rows except header
+              const rows = table.querySelectorAll('tr');
+              rows.forEach((row, index) => {
+                if (index !== 0) row.remove(); // keep the first row (header)
+              });
+            }
+          })
+          .catch(error => {
+            console.error("❌ Error:", error);
+            showInlineAlert("Something went wrong while adding to draft.", 'danger');
+
+
+          });
+
+      });
+    }
+
+
+    // Function to set up event listeners for a row (extracted for reuse)
+    function setupRowEventListeners(row) {
+      const qtyInput = row.querySelector(".quantity");
+      const priceInput = row.querySelector(".unit-price");
+      const discountInput = row.querySelector(".unit-discount");
+      const subTotalInput = row.querySelector(".subtotal");
+
+      // Function to update subtotal for a specific row
+      const updateSubtotal = () => {
+        const qty = parseFloat(qtyInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const discount = parseFloat(discountInput.value) || 0;
+
+        // Calculate subtotal: quantity * price - discount
+        const subtotal = (qty * price) - discount;
+        subTotalInput.value = subtotal.toFixed(2);
+        updateTotal();
+      };
+
+      // Remove row event listener
+      row.querySelector(".remove-row").addEventListener("click", () => {
+        const productId = parseInt(row.getAttribute('data-product-id'));
+        const productSelect = document.getElementById("product_id");
+        const productRows = document.getElementById("product-rows");
+        selectedProductIds = selectedProductIds.filter(id => id !== productId);
+        console.log("productRows");
+        productRows.removeChild(row);
+        if (productRows.querySelectorAll('tr:not(.pay-now-row)').length === 0) {
+          productRows.innerHTML = '';
+        } else {
+          // Re-add the Pay Now button if there are still products
+          addPayNowButtonRow();
+        }
+        updateTotal();
+      });
+
+      // Event listeners for input changes
+      qtyInput.addEventListener("input", async () => {
+        const productId = parseInt(row.getAttribute('data-product-id'));
+        const qty = parseFloat(qtyInput.value) || 0;
+
+        // Check if the quantity is available before updating
+        await checkOrder(productId, qty, qtyInput);
+        updateSubtotal();
+      });
+
+      priceInput.addEventListener("input", updateSubtotal);
+      discountInput.addEventListener("input", updateSubtotal);
+
+      // Initialize subtotal
+      updateSubtotal();
+    }
+
+    let selectedProductIds = [];
+    const tableBody = document.getElementById("product-rows");
+    const rows = tableBody?.querySelectorAll("tr") || [];
+
+    const barcodeInput = document.getElementById('barcode');
+    barcodeInput.addEventListener('keypress', async function (e) {
+      if (e.key !== 'Enter') return;
+
+      const barcode = this.value.trim();
+      if (!barcode) return;
+
+      try {
+        const response = await fetch(`${BASEURL}Product/Sku/${barcode}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data) {
+
+          showInlineAlert("Product not found", 'danger');
+
+          this.value = '';
+          return;
+        }
+
+        if (!data.stock_available) {
+          showInlineAlert('Product not available in stock', 'danger');
+
+
+          this.value = '';
+          return;
+        }
+
+        if (selectedProductIds.includes(data.id)) {
+          console.log('hiiiiiww');
+          showInlineAlert('Product already added', 'danger');
+
+          this.value = '';
+          return;
+        }
+
+        selectedProductIds.push(data.id);
+        showInlineAlert('Product Found and Added', 'danger');
+
+        const selectedId = data.id;
+        const selectedText = data.name || 'Unnamed';
+        const unitName = data.Unit || 'Unit';
+        const retail_price = data.retail_price || 0;
+        const average_purchase_amount = data.average_purchase_amount || 0;
+        console.log(unitName);
+        const row = document.createElement('tr');
+        row.setAttribute('data-product-id', selectedId);
+
+        row.innerHTML = `
+      <td></td>
+      <td>
+        <input type="text" class="form-control bg-grey" value="${selectedText}" readonly />
+        <input type="hidden" name="product_ids[]" value="${selectedId}" />
+      </td>
+      <td><input type="number" required name="quantities[]"   min="1" 
+    oninput="if(this.value < 1) this.value = 1;" class="form-control quantity" value="1" /></td>
+      <td><input type="text" class="form-control unit" value="${unitName}" readonly /></td>
+      <td><input type="number" readonly name="prices[]" class="form-control unit-price bg-grey" value="${retail_price}" min="0" step="0.01" /></td>
+      <td><input type="number" name="discounts[]" class="form-control unit-discount bg-grey" value="0" min="0" step="0.01" /></td>
+      <td><input type="number" class="form-control subtotal" value="" readonly /></td>
+      <td class="d-none"> <input name="average_purchase_amount[]" type="text" class="form-control average-purchase-amount" value="${average_purchase_amount}" readonly /></td>
+      <td class="d-none"><input type="text" id="row-profit" class="row-profit form-control bg-grey fw-bold" value="" readonly /></td>
+      <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
+    `;
+
+        // ✅ Append to the correct table body
+        tableBody.appendChild(row);
+
+        this.value = ''; // Clear input
+
+        // Add/refresh Pay Now button
+        addPayNowButtonRow();
+
+        await checkOrder(selectedId, 1, row.querySelector('.quantity'));
+        setupRowEventListeners?.(row);
+
+      } catch (error) {
+        console.error('Fetch error:', error);
+        localStorage.setItem('globalAlertMessage', "Server Communication Error");
+        localStorage.setItem('globalAlertType', 'danger');
+        this.value = '';
+      }
+    });
+
+    async function checkOrder(product_id, quantity, qtyInputElement = null, suppressAlert = false) {
+      try {
+        const res = await fetch(`${BASEURL}Order/OrderCheck`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            product_id: product_id,
+            quantity: quantity
+          })
+        });
+
+        const data = await res.json();
+        console.log("OrderCheck:", data);
+
+        if (!res.ok || data.status === false) {
+          if (!suppressAlert) {
+            showInlineAlert("This product is out of Stock", "danger");
+          }
+
+          if (qtyInputElement) {
+            const prevQuantity = qtyInputElement.getAttribute('data-last-valid');
+            qtyInputElement.value = prevQuantity;
+          }
+
+          return { status: false, available: data.available || 0 };
+        } else {
+          if (qtyInputElement) {
+            qtyInputElement.setAttribute('data-last-valid', quantity);
+          }
+
+          return { status: true, available: data.available };
+        }
+      } catch (err) {
+        console.error("OrderCheck failed:", err);
+        if (qtyInputElement) {
+          const prevQuantity = qtyInputElement.getAttribute('data-last-valid') || 1;
+          qtyInputElement.value = prevQuantity;
+        }
+        return { status: false, available: 0 };
+      }
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+      loadCustomers();
+      loadProducts();
+      setupProductSelection();
+
+      // Add payment modal to the document
+      addPaymentModal();
+
+
+      // Load footer
+      fetch("scripts/footer.html")
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById("footer-container").innerHTML = html;
+          const yearSpan = document.getElementById("year");
+          if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+        });
+
+      // Load sidebar
+      fetch("sidebar.html")
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById("sidebar-container").innerHTML = html;
+        });
+      // Add Pay Now button row
+
+      // Setup Pay Now button functionality
+      setupPayNowButton();
+    });
+
+
+    function showInlineAlert(message, type = 'info') {
+      const alertPlaceholder = document.getElementById('alertPlaceholder');
+      const alertHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert" style="z-index:9999;">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+      alertPlaceholder.innerHTML = alertHTML;
+
+      // Optional: Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        const alert = alertPlaceholder.querySelector('.alert');
+        if (alert) alert.classList.remove('show');
+      }, 5000);
+    }
+
+
+    // Function to add payment modal to the document
+    function addPaymentModal() {
+
+      const modalHTML = `
+    <div class="modal fade" id="paymentModal" tabindex="-1" role="dialog" aria-labelledby="paymentModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title" id="paymentModalLabel">TOTAL: <span id="modal-total">0.00</span></h5>
+             <button type="button" class="close text-black"  data-bs-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+          
+            </div>
+            
+            <div class="form-group">
+              <label for="payment-notes">Notes</label>
+              <textarea id="payment-notes" class="form-control"></textarea>
+            </div>
+                <div class="form-group">
+  <label for="customer_id">Select Customer</label>
+  <select id="customer_id" style="width: 100%;"></select>
+</div>
+            <div class="form-group">
+              <label>Payment Method</label>
+              <div class="d-flex">
+                <div class="form-check mr-4">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
+                  <label class="form-check-label" for="cashPayment">
+                    💵 Cash
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="paymentMethod" id="creditPayment" value="credit" checked>
+                  <label class="form-check-label" for="creditPayment">
+                    💳 Credit
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group mt-4">
+              <label for="payment-amount">Actual Payment</label>
+              <input  readonly type="number" id="payment-amount" class="form-control" step="0.01">
+              <label for="payment-amount"> Payment</label>
+               <input  type="number" value="" id="payment-to-amount" class="form-control" step="0.01">
+            </div>
+          
+            <div class="form-group">
+              <label for="change-amount">Change</label>
+              <input type="number" id="change-amount" class="form-control" readonly value="0">
+            </div>
+        
+                     <div class="form-group">
+           
+             <input type="hidden" readonly id="payment-profit-amount" class="form-control" value="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="discount-amount">Discount</label>
+              <input type="number" id="discount-amount" class="form-control" value="0" step="0.01">
+            </div>
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" class="btn btn-primary px-5" id="save-payment-btn">Save</button>
+            <button type="button" class="btn btn-danger px-5"  data-bs-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+      // Append the modal HTML to the body
+      const modalContainer = document.createElement('div');
+      modalContainer.innerHTML = modalHTML;
+      document.body.appendChild(modalContainer);
+
+      // Setup event handlers for the payment modal
+      setupPaymentModalHandlers();
+    }
+
+    // Setup event handlers for the payment modal
+    // Setup event handlers for the payment modal
+    function setupPaymentModalHandlers() {
+
+
+
+      async function updateOrderFromDraft() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+
+        if (sessionId) {
+
+
+          try {
+            const response = await fetch(`${BASEURL}Order/Update`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ order_session: sessionId })  // or session_id
+            });
+
+            if (!response.ok) {
+              throw new Error("Failed to Update Draft");
+            }
+            showInlineAlert('Order Moved from drafts to Shipping', 'success');
+
+
+
+          } catch (error) {
+            console.error("Error:", error);
+            localStorage.setItem('globalAlertMessage', error);
+            localStorage.setItem('globalAlertType', 'danger');
+          }
+        }
+      }
+
+      // Calculate change when payment amount changes
+      const paymentInput = document.getElementById('payment-amount');
+     let paymentToInput = document.getElementById('payment-to-amount');
+  
+      paymentInput.addEventListener('input', () => {
+          paymentToInput=paymentInput;
+        const maxVal = parseFloat(paymentInput.value) || 0;
+        paymentToInput.max = maxVal; // set max attribute
+      });
+
+      // Validate on typing in payment-to-amount
+      paymentToInput.addEventListener('input', () => {
+        const maxVal = parseFloat(paymentInput.value) || 0;
+        let entered = parseFloat(paymentToInput.value) || 0;
+
+        if (entered > maxVal) {
+          paymentToInput.value = maxVal; // restrict to max
+        }
+      });
+      const changeInput = document.getElementById('change-amount');
+      const discountInput = document.getElementById('discount-amount');
+      console.log("payment", paymentToInput.value);
+      if (paymentToInput) {
+        paymentToInput.addEventListener('input', function () {
+          const total = document.getElementById('total').value;
+          const payment = parseFloat(this.value) || 0;
+          const discount = parseFloat(discountInput?.value) || 0;
+
+          const change = payment - (total - discount);
+          changeInput.value = change > 0 ? change.toFixed(2) : '0.00';
+        });
+      }
+
+      // Update change when discount changes
+      if (discountInput) {
+        discountInput.addEventListener('input', function () {
+          const total = parseFloat(document.getElementById('total').value) || 0;
+          const payment = parseFloat(paymentToInput?.value) || 0;
+          const discount = parseFloat(this.value) || 0;
+
+          const change = payment - (total - discount);
+          changeInput.value = change > 0 ? change.toFixed(2) : '0.00';
+        });
+      }
+
+      // Save payment button handler
+      const saveBtn = document.getElementById('save-payment-btn');
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async function () {
+          const tableBody = document.getElementById("product-rows");
+          const rows = tableBody?.querySelectorAll("tr") || [];
+          const products = [];
+          let hasLowQuantity = false;
+          let lowQuantityProducts = [];
+let Discount = 0;
+          rows.forEach((row,index) => {
+            const cells = row.querySelectorAll("td");
+            const productName = cells[1]?.innerText?.trim(); // assuming product name is in the first column
+            const productId = cells[1]?.querySelector('input[name="product_ids[]"]')?.value?.trim();
+            const quantity = parseFloat(cells[2]?.querySelector("input")?.value?.trim()) || 0;
+            const price = cells[4]?.querySelector("input")?.value?.trim();
+  const discountInput = cells[5]?.querySelector("input"); // get the input element
+
+  // If input exists, parse its value, otherwise default to 0
+  const discount = discountInput ? parseFloat(discountInput.value.trim()) || 0 : 0;
+
+  console.log(`Row ${index} discount:`, discount);
+
+  Discount += discount;
+            if (productId) {
+              if (quantity < 1) {
+                hasLowQuantity = true;
+                lowQuantityProducts.push(`"${productName}"`);
+              }
+
+              products.push({
+                product_id: productId,
+                quantity: quantity.toString(),
+                price: price,
+                discount: discount
+              });
+            }
+          });
+     console.log("Final DIscount,",Discount);
+          console.log("PROducts,",JSON.stringify(products));
+          if (hasLowQuantity) {
+            $('#paymentModal').modal('hide');
+            console.log("hato");
+            return; // stop further processing
+            showInlineAlert(`Please discard Products with less than 1 quantity).`);
+
+
+          }
+
+          // Continue your logic if no errors
+          console.log("Products", products);
+
+
+          const total = document.getElementById('modal-total').textContent;
+          const customer = document.getElementById('customer_id').value;
+          if (!customer) {
+            $('#paymentModal').modal('hide');
+            showInlineAlert(' Please select a customer.');
+            return;
+          }
+          const notes = document.getElementById('payment-notes').value;
+          const method = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'N/A';
+          const payment = document.getElementById('payment-amount').value;
+          const change = document.getElementById('change-amount').value;
+          const discount = document.getElementById('discount-amount').value;
+          const paymentProfitAmount = document.getElementById('payment-profit-amount').value;
+          const paymentToInput = document.getElementById('payment-to-amount').value;
+
+
+
+          $('#paymentModal').modal('hide');
+
+          // Submit purchase stock
+          const user_id = 1; // Replace with actual user ID if available
+          const amount = document.getElementById('total').value;
+          console.log(amount);
+          console.log(sessionId);
+          try {
+            const response = await fetch(`${BASEURL}Order/PurchaseStock`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ products, user_id, customer, amount, paymentProfitAmount, sessionId, paymentToInput })
+            });
+
+            if (!response.ok) {
+              throw new Error("Failed to submit purchase stock");
+            }
+
+            const data = await response.json();
+            console.log("Success:", data);
+            // Generate printable receipt HTML
+
+            // First, fetch product names for all items
+            for (let i = 0; i < products.length; i++) {
+              const res = await fetch(`${BASEURL}Product/${products[i].product_id}`);
+              const productData = await res.json();
+              products[i].name = productData?.name || `Product-${products[i].product_id}`;
+            }
+            console.log(products);
+
+
+            printReceipt(data, products, paymentToInput);
+            showInlineAlert('Purchase stock added successfully', 'success');
+
+            selectedProductIds = [];
+
+
+            // Get the table body (assumes your table has a <tbody>)
+            const table = document.getElementById('productTable');
+            const tbody = table.querySelector('tbody');
+
+            // Clear all rows in the tbody
+            if (tbody) {
+
+              const Total = document.getElementById('total');
+
+              Total.value = '';
+              tbody.innerHTML = '';
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            localStorage.setItem('globalAlertMessage', "Error submitting purchase stock");
+
+
+          }
+        });
+      }
+    }
+    function addPayNowButtonRow() {
+      const tableBody = document.getElementById("product-rows");
+
+      // Remove any existing Pay Now row
+      const existingPayNowRow = document.querySelector('.pay-now-row');
+      if (existingPayNowRow) {
+        existingPayNowRow.remove();
+      }
+
+      // Create Pay Now row
+      const payNowRow = document.createElement('tr');
+      payNowRow.className = 'pay-now-row';
+      payNowRow.innerHTML = `
+    <td colspan="8" class="text-right">
+      <button class="btn btn-primary" id="payNowBtn">Pay Now</button>
+      <button class="btn btn-secondary ml-2" id="addToDraftBtn" ${sessionId ? 'disabled' : ''}>Add To Drafts</button>
+    </td>
+  `;
+
+      // Append to table body
+      tableBody.appendChild(payNowRow);
+
+
+
+
+      document.getElementById("addToDraftBtn").addEventListener("click", () => {
+        const rows = document.querySelectorAll("#productTable tbody tr");
+        const products = [];
+
+        rows.forEach(row => {
+          const productId = row.querySelector('input[name="product_ids[]"]')?.value;
+          const quantity = row.querySelector('input[name="quantities[]"]')?.value;
+          const retail = row.querySelector('input[name="prices[]"]')?.value;
+          const discount = row.querySelector('input[name="discounts[]"]')?.value;
+          const unitName = row.querySelector('input.unit')?.value;
+
+          if (productId && quantity && retail) {
+            products.push({
+              product_id: parseInt(productId),
+              quantity: parseFloat(quantity),
+              retail: parseFloat(retail),
+              discount: parseFloat(discount || 0),
+              unit_name: unitName
+            });
+          }
+        });
+
+        if (products.length === 0) {
+
+          showInlineAlert("No products found", 'danger');
+
+          return;
+        }
+
+        productsToSubmit = products;
+        document.getElementById("draftNameInput").value = "";
+        document.getElementById("draftModal").style.display = "flex";
+      });
+    }
+
+    function closeDraftModal() {
+      document.getElementById("draftModal").style.display = "none";
+    }
+
+    async function submitDraft() {
+      const draftName = document.getElementById("draftNameInput").value.trim();
+      if (!draftName) {
+        showInlineAlert("Please enter a draft name.", 'danger');
+
+
+        return;
+      }
+
+      const bodyData = {
+        user_id: 1,
+        location_id: 1,
+        products: productsToSubmit,
+        status: "draft",
+        draft_name: draftName
+      };
+
+      try {
+        const response = await fetch(`${BASEURL}Order/InsertDraft`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyData)
+        });
+
+        if (!response.ok) throw new Error("Failed to insert draft");
+        await response.json();
+        showInlineAlert("No products found", 'success');
+
+
+        selectedProductIds = [];
+
+        const table = document.getElementById('productTable');
+        const tbody = table.querySelector('tbody');
+        const total = document.getElementById('total');
+
+        if (tbody) {
+          tbody.innerHTML = '';
+          if (total) total.value = '';
+        }
+
+        closeDraftModal();
+
+      } catch (error) {
+        console.error("❌ Error:", error);
+        localStorage.setItem('globalAlertMessage', "Something went wrong while adding to draft.");
+        localStorage.setItem('globalAlertType', 'danger');
+
+      }
+    }
+
+    // Function to setup Pay Now button
+    function setupPayNowButton() {
+      // Add a listener for the Pay Now button which may be added dynamically
+      document.addEventListener('click', function (e) {
+        if (e.target && e.target.classList.contains('btn') && e.target.textContent === 'Pay Now') {
+
+          const rawTotal = document.getElementById('total').value;
+          const cleanedTotal = rawTotal.replace(/,/g, ''); // Remove commas
+          const total = parseFloat(cleanedTotal) || 0;
+
+
+          // Update the total in the modal
+          document.getElementById('modal-total').textContent = total.toFixed(2);
+
+          // Set the payment amount to match the total
+          document.getElementById('payment-amount').value = total.toFixed(2);
+
+          // Show the payment modal
+          $('#paymentModal').modal('show');
+        }
+      });
+    }
+
+
+    function matchStart(params, data) {
+      if ($.trim(params.term) === '') return data;
+      if (typeof data.text === 'undefined') return null;
+      if (data.text.toLowerCase().startsWith(params.term.toLowerCase())) return data;
+      return null;
+    }
+
+
+
+    async function loadCustomers() { 
+  try {
+    const response = await fetch(`${BASEURL}Customer`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+    const customerList = data.Customer || [];
+    const select = $('#customer_id');
+
+    // Destroy old select2 if exists
+    if (select.hasClass("select2-hidden-accessible")) {
+      select.select2('destroy');
+    }
+    select.empty();
+
+    // Optional placeholder
+    select.append(new Option('--Choose Customer--', '', false, false));
+
+    // Add customers dynamically
+    customerList.forEach(customer => {
+      select.append(new Option(customer.name, customer.id, false, false));
+    });
+
+    // Initialize Select2
+    if ($.fn.select2) {
+      select.select2({
+        placeholder: '--Choose Customer--',
+        allowClear: true,
+        dropdownParent: $('#paymentModal'),
+        width: 'resolve',
+        matcher: matchStart
+      });
+    }
+
+    // Function to handle Walk-in logic
+    function handleCustomerChange(selectedVal) {
+      const paymentInput = document.getElementById('payment-amount');
+      const amountToPayInput = document.getElementById('payment-to-amount');
+
+      if (selectedVal == 5) { // Walk-in selected
+        amountToPayInput.value = paymentInput.value || 0;
+        amountToPayInput.readOnly = true;
+        console.log(`💰 Walk-in selected → amount-to-pay = ${amountToPayInput.value} (locked)`);
+      } else {
+        amountToPayInput.readOnly = false;
+      }
+    }
+
+    // On customer change
+    select.on('change', function () {
+      handleCustomerChange($(this).val());
+    });
+
+    // Extra: keep syncing when Walk-in is selected
+    document.getElementById('payment-amount').addEventListener('input', function () {
+    
+        document.getElementById('payment-to-amount').value = this.value || 0;
+
+    });
+
+  } catch (error) {
+    console.error('Error fetching Customer data:', error);
+  }
+}
+
+
+
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    async function loadProducts() {
+      try {
+        const response = await fetch(`${BASEURL}Product`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        const select = document.getElementById('product_id');
+        select.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '--Choose Product--';
+        select.appendChild(defaultOption);
+
+        if (data.Product && data.Product.length > 0) {
+          for (const product of data.Product) {
+            const option = document.createElement('option');
+            option.value = product.id;
+            option.textContent = product.name;
+            option.setAttribute('data-unit', product.unit_name || 'N/A');
+
+            // 👇 Suppress alert here
+            const isAvailable = await checkOrder(product.id, 1, null, true);
+
+            if (!isAvailable) {
+              option.disabled = true;
+              option.textContent += ' (Out of Stock)';
+            }
+
+            select.appendChild(option);
+          }
+        } else {
+          const noProductOption = document.createElement('option');
+          noProductOption.disabled = true;
+          noProductOption.textContent = 'No Product found';
+          select.appendChild(noProductOption);
+        }
+      } catch (error) {
+        console.error('Error fetching Product data:', error);
+      }
+    }
+    const orderList = [];  // <-- Holds final {product_id, quantity}
+    // Check if coming from drafts (URL parameter)
+
+    function setupProductSelection() {
+      const productSelect = document.getElementById("product_id");
+      const productRows = document.getElementById("product-rows");
+      let headerAdded = false;
+
+
+
+      if (sessionId) {
+
+        // Load draft data and populate products
+        loadDraftData(sessionId);
+      }
+
+      // Function to load draft data
+      async function loadDraftData(sessionId) {
+        try {
+          const response = await fetch(`${BASEURL}Order/GetOneDraft`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              order_session: sessionId
+            })
+          });
+
+          if (!response.ok) throw new Error(`Failed to fetch draft data for session ${sessionId}`);
+
+          const draftData = await response.json();
+
+          if (draftData.drafts && draftData.drafts.length > 0) {
+            // Clear existing products
+            productRows.innerHTML = '';
+            selectedProductIds = [];
+
+            // Add each draft product to selection
+            for (const draft of draftData.drafts) {
+              await addProductFromDraft(draft);
+            }
+
+            // Add Pay Now button after all products are loaded
+            addPayNowButtonRow();
+          }
+        } catch (error) {
+          console.error("Error loading draft data:", error);
+
+
+          localStorage.setItem('globalAlertMessage', "Error loading draft data. Please try again.");
+          localStorage.setItem('globalAlertType', 'danger');
+        }
+      }
+
+      // Function to add product from draft data
+      async function addProductFromDraft(draftItem) {
+        const {
+          product_id,
+          quantity,
+          retail,
+          discount,
+          unit_name,
+          product_name
+        } = draftItem;
+
+        // Add to selected products array
+        if (!selectedProductIds.includes(parseInt(product_id))) {
+          selectedProductIds.push(parseInt(product_id));
+        }
+
+        // Get average purchase amount (if needed)
+        let average_purchase_amount = 0;
+        try {
+          const res = await fetch(`${BASEURL}Product/${product_id}`);
+          if (res.ok) {
+            const productData = await res.json();
+            average_purchase_amount = productData.average_purchase_amount || 0;
+          }
+        } catch (error) {
+          console.error("Error fetching additional product data:", error);
+        }
+
+        const row = document.createElement("tr");
+        row.setAttribute('data-product-id', product_id);
+
+        row.innerHTML = `
+      <td></td>
+      <td>
+        <input type="text" class="form-control bg-grey" value="${product_name}" readonly />
+        <input type="hidden" name="product_ids[]" value="${product_id}" />
+      </td>
+      <td><input  min="1" 
+    oninput="if(this.value < 1) this.value = 1;"  type="number" required name="quantities[]" class="form-control quantity" value="${quantity}" /></td>
+      <td><input type="text" class="form-control unit" value="${unit_name}" readonly /></td>
+      <td><input type="number" readonly name="prices[]" class="form-control unit-price bg-grey" value="${retail}" min="0" step="0.01" /></td>
+      <td><input type="number" name="discounts[]" class="form-control unit-discount bg-grey" value="${discount}" min="0" step="0.01" /></td>
+      <td><input type="number" class="form-control subtotal" value="" readonly /></td>
+      <td class="d-none"><input name="average_purchase_amount[]" type="text" class="form-control average-purchase-amount" value="${average_purchase_amount}" readonly /></td>
+      <td class="d-none"><input type="text" id="row-profit" class="row-profit form-control bg-grey fw-bold" value="" readonly /></td>
+      <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
+    `;
+
+        productRows.appendChild(row);
+
+        // Set up event listeners for the row
+        setupRowEventListeners(row);
+
+        // Check order availability
+        await checkOrder(product_id, quantity, row.querySelector('.quantity'));
+      }
+
+
+
+      // Original product selection event listener
+      productSelect.addEventListener("change", async function () {
+        if (!this.value) return;
+        console.log("exists item");
+        const selectedOption = this.options[this.selectedIndex];
+        const selectedId = this.value;
+        const selectedText = selectedOption.text;
+        const unitName = selectedOption.getAttribute("data-unit") || 'N/A';
+        // Reset dropdown immediately after capturing values
+        this.value = "";
+
+        if (selectedProductIds.includes(parseInt(selectedId))) {
+          console.log("exists");
+
+          const productRows = document.getElementById("product-rows");
+          const existingRow = productRows.querySelector(`[data-product-id="${selectedId}"]`);
+          const quantityInput = existingRow?.querySelector('.quantity');
+
+          if (quantityInput) {
+            const response = await checkOrder(selectedId, 1, quantityInput);
+            console.log("OrderCheckCHHCHCHCH:", response);
+
+            // ✅ Correct boolean check (don't compare to 'true' as a string)
+            if (response.status) {
+              const currentQty = parseInt(quantityInput.value) || 0;
+              const newQty = currentQty + 1;
+
+              // Optional: Prevent going over available stock
+              if (newQty <= response.available) {
+                quantityInput.value = newQty;
+                quantityInput.dispatchEvent(new Event('input')); // trigger subtotal recalculation
+              } else {
+                showInlineAlert(`Only ${response.available} items available.`, 'warning');
+              }
+
+            } else {
+              showInlineAlert(`Product out of stock or not available.`, 'danger');
+            }
+          }
+
+          return;
+        }
+
+        selectedProductIds.push(parseInt(selectedId));
+
+        // Fetch product price
+        let retail_price = 0;
+        let average_purchase_amount = 0;
+        try {
+          const res = await fetch(`${BASEURL}Product/${selectedId}`);
+          if (!res.ok) throw new Error(`Failed to fetch price for product ${selectedId}`);
+          const productData = await res.json();
+          retail_price = productData.retail_price || 0;
+          average_purchase_amount = productData.average_purchase_amount || 0;
+        } catch (error) {
+          console.error("Error fetching product price:", error);
+        }
+
+        const row = document.createElement("tr");
+        row.setAttribute('data-product-id', selectedId);
+
+        row.innerHTML = `
+      <td></td>
+      <td>
+        <input type="text" class="form-control bg-grey" value="${selectedText}" readonly />
+        <input type="hidden" name="product_ids[]" value="${selectedId}" />
+      </td>
+      <td><input type="number" min="1" required name="quantities[]" class="form-control quantity" value="1" /></td>
+      <td><input type="text" class="form-control unit" value="${unitName}" readonly /></td>
+      <td><input type="number" readonly name="prices[]" class="form-control unit-price bg-grey" value="${retail_price}" min="0" step="0.01" /></td>
+      <td><input type="number" name="discounts[]" class="form-control unit-discount bg-grey" value="0" min="0" step="0.01" /></td>
+      <td><input type="number" class="form-control subtotal" value="" readonly /></td>
+      <td class="d-none"><input name="average_purchase_amount[]" type="text" class="form-control average-purchase-amount" value="${average_purchase_amount}" readonly /></td>
+      <td class="d-none"><input type="text" id="row-profit" class="row-profit form-control bg-grey fw-bold" value="" readonly /></td>
+      <td ><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
+    `;
+
+        productRows.appendChild(row);
+        this.value = "";
+
+        // Add/refresh Pay Now button
+        addPayNowButtonRow();
+
+        await checkOrder(selectedId, 1, row.querySelector('.quantity'));
+
+        // Set up event listeners for the new row
+        setupRowEventListeners(row);
+      });
+    } function updateTotal() {
+      let total = 0;
+      let totalProfit = 0;
+
+      document.querySelectorAll("tr").forEach(row => {
+        const subtotalInput = row.querySelector(".subtotal");
+        const priceInput = row.querySelector(".unit-price");
+           const discountInput = row.querySelector(".unit-discount");
+        const avgPurchaseInput = row.querySelector(".average-purchase-amount");
+        const qtyInput = row.querySelector(".quantity");
+        const rowProfitInput = row.querySelector(".row-profit"); // Input to show row-wise profit
+
+        if (subtotalInput) {
+          const subtotal = parseFloat(subtotalInput.value) || 0;
+          total += subtotal;
+        }
+
+        if (priceInput && avgPurchaseInput && qtyInput) {
+          const price = parseFloat(priceInput.value) || 0;
+          const averagePurchase = parseFloat(avgPurchaseInput.value) || 0;
+          const qty = parseFloat(qtyInput.value) || 0;
+          const profit = (price - averagePurchase) * qty;
+
+          // Update row profit input field
+          if (rowProfitInput) {
+            // Format the profit value with commas and 2 decimal places
+            const formattedProfit = profit.toLocaleString('en-US', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+            rowProfitInput.value = formattedProfit;
+          }
+
+          totalProfit += profit;
+
+          console.log("Row Data → Price:", price, "Qty:", qty, "Profit:", profit.toFixed(2));
+        }
+      });
+
+      const totalFormatted = total.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+      const totalProfitFormatted = totalProfit.toFixed(2);
+
+      console.log("Total:", totalFormatted);
+      console.log("Total Profit:", totalProfitFormatted);
+
+      const totalInput = document.getElementById('total');
+      console.log("value" + totalInput.value);
+      if (totalInput) {
+        totalInput.value = totalFormatted;
+      }
+
+      const modalTotalElement = document.getElementById("modal-total");
+      if (modalTotalElement) {
+        modalTotalElement.textContent = totalFormatted;
+      }
+
+const paymentToInput = document.getElementById("payment-to-amount");
+const paymentInput = document.getElementById("payment-amount");
+
+if (paymentInput && paymentToInput) {
+  paymentToInput.value = totalFormatted;
+  paymentInput.value = totalFormatted;
+}
+
+      // const paymentProfit = document.getElementById("payment-profit-amount");
+      // if (paymentProfit) {
+      //   paymentProfit.value = totalProfitFormatted;
+      // }
+      // const profitElement = document.getElementById("total-profit");
+      // if (profitElement) {
+      //   profitElement.value = totalProfitFormatted;
+      // }
+    }
+
+
+    document.getElementById('clearAll').addEventListener('click', function () {
+      console.log("afterclear" + selectedProductIds); // Clear the selectedProductIds array
+      selectedProductIds = [];
+
+
+      // Get the table body (assumes your table has a <tbody>)
+      const table = document.getElementById('productTable');
+      const tbody = table.querySelector('tbody');
+
+      // Clear all rows in the tbody
+      if (tbody) {
+        tbody.innerHTML = '';
+      } else {
+        // If there's no <tbody>, remove all rows except header
+        const rows = table.querySelectorAll('tr');
+        rows.forEach((row, index) => {
+          if (index !== 0) row.remove(); // keep the first row (header)
+        });
+      }
+
+      // Update totals or any other UI if needed
+      updateTotal();
+    });
+
+
+
+
+
+
+  </script>
+
+
+</body>
+
+</html>
