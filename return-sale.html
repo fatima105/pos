@@ -82,15 +82,30 @@
                 <table id="saleTable" class="table table-striped table-bordered mt-3">
                   <thead class="table-light text-dark">
                     <tr>
-                      <th>Product</th>
+                      <th>Pro</th>
+                       <th>SID</th>
                       <th>Qty</th>
-                      <th>Price</th>
-                      <th>Discount</th>
+                      <th>Pri</th>
+                      <th>Dis</th>
                     
-                          <th>Purchase_Amount</th>
+                          <th>Purchase</th>
+                       
+
+                          <th>Sub</th>
+                           <th>Sub Purchase</th>
+                             <th>Del</th>
                     </tr>
                   </thead>
                   <tbody id="saleTableBody"></tbody>
+                  <tfoot>
+  <tr>
+    <td colspan="6" class="text-end fw-bold">Grand Total:</td>
+    <td id="totalAmount" class="fw-bold">0.00</td>
+    <td id="totalPurchaseAmount" class="fw-bold">0.00</td>
+    <td></td>
+  </tr>
+</tfoot>
+
                 </table>
               </div>
             </div>
@@ -205,34 +220,66 @@
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
   }
+
 function updateOverallTotal() {
   let total = 0;
+  let totalPurchase = 0;
   const rows = document.querySelectorAll('#saleTableBody tr');
 
   rows.forEach(row => {
     const qty = parseFloat(row.querySelector('.qty-input')?.value) || 0;
     const retail = parseFloat(row.querySelector('.retail-input')?.value) || 0;
     const discount = parseFloat(row.querySelector('.discount-input')?.value) || 0;
+    const purchase = parseFloat(row.querySelector('td:nth-child(6)')?.textContent) || 0; // purchase col
 
-    const rowTotal = (qty * retail) - discount;
+    // ✅ Retail subtotal
+    const rowTotal = qty * retail;
     total += rowTotal;
+    const subtotalCell = row.querySelector('.subtotal-cell');
+    if (subtotalCell) subtotalCell.textContent = rowTotal.toFixed(2);
+
+    // ✅ Purchase subtotal
+
+    const rowTotalPurchase = qty * purchase;
+    totalPurchase += rowTotalPurchase;
+    const subPurchaseCell = row.querySelector('.subpurchase-cell');
+    if (subPurchaseCell) subPurchaseCell.textContent = rowTotalPurchase.toFixed(2);
   });
 
+  // ✅ Update header total
   document.getElementById('totalAmount').textContent = total.toFixed(2);
+
+  // ✅ If you want to also show total purchase somewhere:
+  let totalPurchaseEl = document.getElementById('totalPurchaseAmount');
+  if (totalPurchaseEl) {
+    totalPurchaseEl.textContent = totalPurchase.toFixed(2);
+  }
+    return { total, totalPurchase };
 }
 
+
   let saleId = getQueryParam('id');
+  console.log("ID",saleId);
   let sale_date = '';
+
 function CheckQuantity(input) {
   const row = input.closest('tr');
   const quantity = parseFloat(input.value) || 0;
   const retail = parseFloat(row.querySelector('.retail-input')?.value) || 0;
   const discount = parseFloat(row.querySelector('.discount-input')?.value) || 0;
+  const purchase = parseFloat(row.querySelector('td:nth-child(6)')?.textContent) || 0; // purchase column
 
-  const totalCell = row.querySelector('td:last-child');
-  const rowTotal = (quantity * retail) - discount;
-  totalCell.textContent = rowTotal.toFixed(2);
+  // ✅ Update retail subtotal
+  const subtotalCell = row.querySelector('.subtotal-cell');
+  const rowTotal = quantity * retail;
+  if (subtotalCell) subtotalCell.textContent = rowTotal.toFixed(2);
 
+  // ✅ Update purchase subtotal
+  const subPurchaseCell = row.querySelector('.subpurchase-cell');
+  const rowPurchaseTotal = quantity * purchase;
+  if (subPurchaseCell) subPurchaseCell.textContent = rowPurchaseTotal.toFixed(2);
+
+  // ✅ Update totals in header
   updateOverallTotal();
 }
 
@@ -244,13 +291,13 @@ function CheckQuantity(input) {
       console.log(data);
 
       sale_date = data.sale_date;
-       document.getElementById("sale_id").value = data.sale_id || '';
+      document.getElementById("sale_id").value = data.sale_id || '';
       document.getElementById("voucher_name").value = data.invoice_no || '';
       document.getElementById("customer").value = data.customer_name || '';
       document.getElementById("customer_id").value = data.customer_id;
       document.getElementById("discountSpan").value = parseFloat(data.total_discount || 0).toFixed(2);
       document.getElementById("totalAmount").innerText = data.amount;
-  // <td>${item.adjusted_net_amount}</td>
+
       const tbody = document.getElementById("saleTableBody");
       tbody.innerHTML = "";
 
@@ -258,6 +305,8 @@ function CheckQuantity(input) {
         const filteredProducts = data.products.filter(item => (item.quantity - item.returned_quantity) > 0);
 
         if (filteredProducts.length > 0) {
+
+          console.log("ARSY",filteredProducts);
           filteredProducts.forEach((item) => {
             const maxReturnQty = item.quantity - item.returned_quantity;
 
@@ -267,15 +316,55 @@ function CheckQuantity(input) {
                 ${item.product_name}
                 <input type="hidden" class="product-id" value="${item.product_id}" />
               </td>
-              <td><input type="number" onchange="CheckQuantity(this)" class="form-control qty-input" min="1" max="${maxReturnQty}" value="${maxReturnQty}" data-product-id="${item.product_id}" /></td>
+
+
+
+      <td>
+  <input type="text" class="sale_detail_id form-control" value="${item.sale_detail_id}" readonly />
+</td>
+   <td>
+                <input type="number" onchange="CheckQuantity(this)" 
+                       class="form-control qty-input" 
+                       min="1" max="${maxReturnQty}" 
+                       value="${maxReturnQty}" 
+                       data-product-id="${item.product_id}" />
+              </td>
+       
               <td><input type="number" readonly class="form-control retail-input" value="${item.retail}" /></td>
               <td><input type="number" readonly class="form-control discount-input" value="${item.discount}" /></td>
-            
-                  <td>${item.purchase_amount}</td>
+              <td>${item.purchase_amount}</td>
+<td class="subtotal-cell">${(maxReturnQty * item.retail).toFixed(2)}</td>
+<td class="subpurchase-cell">${(maxReturnQty * item.purchase_amount).toFixed(2)}</td>
+
+              <td class="text-center">
+                <button type="button" class="btn btn-sm btn-danger delete-row">✖</button>
+              </td>
             `;
             tbody.appendChild(row);
           });
 
+          // ✅ Delete row on click
+          tbody.addEventListener("click", function (e) {
+            if (e.target.classList.contains("delete-row")) {
+              e.target.closest("tr").remove();
+        
+    const row = e.target.closest("tr");
+
+    // get productId and sale_detail_id before removing
+    const productId = row.querySelector(".product-id")?.value;
+   
+
+    // remove row from DOM
+    row.remove();
+
+
+ 
+  
+              updateOverallTotal();
+            }
+          });
+
+          // ✅ Initialize DataTable
           $('#saleTable').DataTable({
             responsive: true,
             destroy: true,
@@ -288,11 +377,14 @@ function CheckQuantity(input) {
               { extend: 'print', className: 'btn btn-sm' }
             ]
           });
+
+          updateOverallTotal();
+
         } else {
-          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">All products already returned</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">All products already returned</td></tr>`;
         }
       } else {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center">No products found</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center">No products found</td></tr>`;
         document.getElementById("save-payment-btn").disabled = true;
       }
     } catch (error) {
@@ -306,7 +398,11 @@ function CheckQuantity(input) {
     const totalAmount = document.getElementById("totalAmount").innerText;
     const notes = document.getElementById("notes").value;
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || "cash";
-const customer=document.getElementById('customer').value;
+    const customer = document.getElementById('customer').value;
+  const { total, totalPurchase } = updateOverallTotal(); // get latest totals
+
+  console.log("Grand Total:", total);
+  console.log("Grand Purchase Total:", totalPurchase);
     const now = new Date();
     const currentDate = now.toISOString().split("T")[0];
     const currentTime = now.toISOString();
@@ -316,12 +412,14 @@ const customer=document.getElementById('customer').value;
 
     rows.forEach(row => {
       const productId = row.querySelector(".product-id")?.value;
+           const sale_detail_id= row.querySelector(".sale_detail_id")?.value;
       const quantity = parseFloat(row.querySelector(".qty-input")?.value || 0);
       const retail = parseFloat(row.querySelector(".retail-input")?.value || 0);
       const discount = parseFloat(row.querySelector(".discount-input")?.value || 0);
 
       if (productId && quantity > 0) {
         products.push({
+          sale_detail_id:sale_detail_id,
           product_id: productId,
           quantity,
           retail,
@@ -342,11 +440,13 @@ const customer=document.getElementById('customer').value;
       user_id: '1',
       voucher_no: voucherNo,
       sale_return_date: currentDate,
+      totalRetail:total,
       amount: totalAmount,
+      totalPurchase:totalPurchase,
       location_id: '1',
       created_at: currentTime,
       updated_at: currentTime,
-      customer:customer,
+      customer: customer,
       products: products
     };
 
@@ -373,6 +473,7 @@ const customer=document.getElementById('customer').value;
     }
   });
 </script>
+
 
 </body>
 </html>

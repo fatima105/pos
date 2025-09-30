@@ -1,248 +1,5 @@
 const db = require('../db');
 
-// // Improved and cleaned version of `addReturnSale` WITH purchase_stocks entry
-// exports.addReturnSale = (req, res) => {
-//   const {
-//     sale_id,
-//     location_id,
-//     customer_id,
-//     user_id,
-//     voucher_no,
-//     sale_date,
-//     sale_return_date,
-//     amount,
-//     products = [],
-//     created_at,
-//     updated_at
-//   } = req.body;
-// for (const product of products) {
-//   const { product_id, quantity, discount, retail } = product;
-
-// const updateQuery = `
-//   UPDATE sale_details
-//   SET returned_quantity = returned_quantity + ?
-//   WHERE sale_id = ? AND product_id = ?
-// `;
-//   db.run(updateQuery, [quantity, sale_id, product_id], function (err) {
-//     if (err) {
-//       console.error(`❌ Error updating returned_quantity for product_id ${product_id}:`, err.message);
-//     } else {
-//       console.log(`✅ returned_quantity set to ${quantity} for product_id ${product_id}`);
-//     }
-//   });
-// }
-
-//   const insertReturnQuery = `
-//     INSERT INTO sale_return 
-//     (sale_id, location_id, customer_id, user_id, voucher_no, sale_date, sale_return_date, amount, created_at, updated_at)
-//     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-//   `;
-
-//   const returnValues = [
-//     sale_id, location_id, customer_id, user_id,
-//     voucher_no, sale_date, sale_return_date,
-//     amount, created_at, updated_at
-//   ];
-
-//   db.serialize(() => {
-//     db.run(insertReturnQuery, returnValues, function (err) {
-//       if (err) {
-//         return res.status(400).json({ error: "Failed to insert into sale_return", detail: err.message });
-//       }
-
-//       const sale_return_id = this.lastID;
-
-//       const insertDetailQuery = `
-//         INSERT INTO sale_return_detail
-//         (location_id, sale_return_id, sale_id, product_id, amount, quantity, discount, net_amount, tax, created_at, updated_at)
-//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-//       `;
-
-//       const insertStockQuery = `
-//         INSERT INTO purchase_stocks
-//         (user_id, location_id, sale_id, sale_return_id, product_id, quantity, process, created_at, updated_at)
-//         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-//       `;
-
-//       const insertTransactionQuery = `
-//         INSERT INTO "Transaction" 
-//         (location_id, type, type_id, date, user_id, created_at, updated_at)
-//         VALUES (?, 'Sale Return', ?, ?, ?, ?, ?)
-//       `;
-
-//       const detailStmt = db.prepare(insertDetailQuery);
-//       const stockStmt = db.prepare(insertStockQuery);
-
-//       if (products.length === 0) {
-//         detailStmt.finalize();
-//         stockStmt.finalize();
-
-//         db.run(insertTransactionQuery, [
-//           location_id, sale_return_id, sale_return_date, user_id, created_at, updated_at
-//         ], function (err) {
-//           if (err) {
-//             return res.status(500).json({ error: "Failed to insert into Transaction table", detail: err.message });
-//           }
-
-//           return res.status(200).json({
-//             message: 'Sale return saved successfully (no products)',
-//             sale_return_id
-//           });
-//         });
-//         return;
-//       }
-
-//       let completed = 0;
-//       for (const product of products) {
-//         const { product_id, quantity, discount, retail } = product;
-
-//         const amount = parseFloat(retail || 0);
-//         const disc = parseFloat(discount || 0);
-//         const qty = parseFloat(quantity || 0);
-//         const net_amount = (amount - disc) * qty;
-//         const tax = 0;
-
-//         // Insert into sale_return_detail
-//         detailStmt.run([
-//           location_id, sale_return_id, sale_id,
-//           product_id, amount, qty, disc, net_amount, tax, created_at, updated_at
-//         ], function (err) {
-//           if (err) console.error("❌ Detail insert error:", err.message);
-
-//           // Insert into purchase_stocks
-//           stockStmt.run([
-//             user_id, location_id, sale_id, sale_return_id,
-//             product_id, qty, 'return', created_at, updated_at
-//           ], function (err) {
-//             if (err) console.error("❌ Stock insert error:", err.message);
-
-//             completed++;
-//             if (completed === products.length) {
-//               detailStmt.finalize();
-//               stockStmt.finalize();
-
-//               db.run(insertTransactionQuery, [
-//                 location_id, sale_return_id, sale_return_date, user_id, created_at, updated_at
-//               ], function (err) {
-//                 if (err) {
-//                   return res.status(500).json({ error: "Failed to insert into Transaction table", detail: err.message });
-//                 }
-
-//                 const transactionId = this.lastID;
-//                 const isWalkIn = customer_id === '1';
-
-//                 if (isWalkIn) {
-//                   const inventorySql = `SELECT head_code FROM chart_of_accounts WHERE head_name = 'Inventory'`;
-//                   const cashSql = `SELECT head_code FROM chart_of_accounts WHERE head_name = 'Cash In Hand'`;
-//                   const revenueSql = `SELECT head_code FROM chart_of_accounts WHERE head_name = 'Revenue'`;
-
-//                   db.get(inventorySql, (errInv, invRow) => {
-//                     if (errInv || !invRow) {
-//                       return res.status(500).json({ error: "Failed to get inventory head_code", detail: errInv?.message });
-//                     }
-
-//                     db.get(cashSql, (errCash, cashRow) => {
-//                       if (errCash || !cashRow) {
-//                         return res.status(500).json({ error: "Failed to get cash head_code", detail: errCash?.message });
-//                       }
-
-//                       db.get(revenueSql, (errRev, revRow) => {
-//                         if (errRev || !revRow) {
-//                           return res.status(500).json({ error: "Failed to get revenue head_code", detail: errRev?.message });
-//                         }
-
-//                         const insertTxnDetail = `
-//                           INSERT INTO transaction_details 
-//                           (location_id, transaction_details, v_id, coa_id, narration, debit, credit)
-//                           VALUES (?, ?, ?, ?, ?, ?, ?)
-//                         `;
-
-//                         const txns = [
-//                           [location_id, null, transactionId, invRow.head_code, 'Inventory', amount, 0],
-//                           [location_id, null, transactionId, cashRow.head_code, 'Cash In Hand', 0, amount],
-//                           [location_id, null, transactionId, revRow.head_code, 'Revenue', amount, 0]
-//                         ];
-
-//                         let inserted = 0;
-//                         for (const t of txns) {
-//                           db.run(insertTxnDetail, t, function (errT) {
-//                             if (errT) {
-//                               return res.status(500).json({ error: "Failed to insert transaction detail", detail: errT.message });
-//                             }
-
-//                             inserted++;
-//                             if (inserted === txns.length) {
-//                               return res.status(200).json({
-//                                 success: true,
-//                                 message: "✅ Sale return and walk-in transaction entries added successfully",
-//                                 sale_return_id,
-//                                 transaction_id: transactionId
-//                               });
-//                             }
-//                           });
-//                         }
-//                       });
-//                     });
-//                   });
-//                 } else {
-//                   const getCustomerHeadSql = `SELECT head_code FROM chart_of_accounts WHERE customer_id = ?`;
-//                   db.get(getCustomerHeadSql, [customer_id], (errCust, custRow) => {
-//                     if (errCust || !custRow) {
-//                       return res.status(500).json({ error: "Failed to get customer head_code", detail: errCust?.message });
-//                     }
-
-//                     const insertTxnDetail = `
-//                       INSERT INTO transaction_details 
-//                       (location_id, transaction_details, v_id, coa_id, narration, debit, credit)
-//                       VALUES (?, ?, ?, ?, ?, ?, ?)
-//                     `;
-
-//                     db.get(`SELECT head_code FROM chart_of_accounts WHERE head_name = 'Inventory'`, (errInv, invRow) => {
-//                       if (errInv || !invRow) {
-//                         return res.status(500).json({ error: "Failed to get inventory head_code", detail: errInv?.message });
-//                       }
-
-//                       db.get(`SELECT head_code FROM chart_of_accounts WHERE head_name = 'Revenue'`, (errRev, revRow) => {
-//                         if (errRev || !revRow) {
-//                           return res.status(500).json({ error: "Failed to get revenue head_code", detail: errRev?.message });
-//                         }
-
-//                         const txns = [
-//                           [location_id, null, transactionId, invRow.head_code, 'Inventory', amount, 0],
-//                           [location_id, null, transactionId, custRow.head_code, 'Customer', 0, amount],
-//                           [location_id, null, transactionId, revRow.head_code, 'Revenue', amount, 0]
-//                         ];
-
-//                         let inserted = 0;
-//                         for (const t of txns) {
-//                           db.run(insertTxnDetail, t, function (errT) {
-//                             if (errT) {
-//                               return res.status(500).json({ error: "Failed to insert transaction detail", detail: errT.message });
-//                             }
-
-//                             inserted++;
-//                             if (inserted === txns.length) {
-//                               return res.status(200).json({
-//                                 success: true,
-//                                 message: "✅ Sale return and credit customer transaction entries added successfully",
-//                                 sale_return_id,
-//                                 transaction_id: transactionId
-//                               });
-//                             }
-//                           });
-//                         }
-//                       });
-//                     });
-//                   });
-//                 }
-//               });
-//             }
-//           });
-//         });
-//       }
-//     });
-//   });
-// };
 
 exports.addReturnSale = (req, res) => {
   const {
@@ -253,28 +10,43 @@ exports.addReturnSale = (req, res) => {
     voucher_no,
     sale_date,
     sale_return_date,
+    totalRetail,
+    totalPurchase,
     amount,
     products = [],
     created_at,
     updated_at
   } = req.body;
 
+  const TotalProfit = totalRetail - totalPurchase;
+  console.log("PRODUCTS", products);
+
+  let TotalDiscount = 0;
+  for (const product of products) {
+    const { discount } = product;
+    TotalDiscount += parseFloat(discount) || 0;
+  }
+
+  console.log("Total Discount:", TotalDiscount.toFixed(2));
+
   // ✅ Clean amount (remove commas, ensure number)
   const cleanAmount = parseFloat(String(amount).replace(/,/g, "")) || 0;
 
+  // Update returned_quantity in sale_details
   for (const product of products) {
-    const { product_id, quantity } = product;
+    const { product_id, quantity, sale_detail_id } = product;
 
     const updateQuery = `
       UPDATE sale_details
       SET returned_quantity = returned_quantity + ?
-      WHERE sale_id = ? AND product_id = ?
+      WHERE product_id = ? AND id = ?
     `;
-    db.run(updateQuery, [quantity, sale_id, product_id], function (err) {
+
+    db.run(updateQuery, [quantity, product_id, sale_detail_id], function (err) {
       if (err) {
         console.error(`❌ Error updating returned_quantity for product_id ${product_id}:`, err.message);
       } else {
-        console.log(`✅ returned_quantity +${quantity} for product_id ${product_id}`);
+        console.log(`✅ returned_quantity +${quantity} for product_id ${product_id}, sale_detail_id ${sale_detail_id}`);
       }
     });
   }
@@ -307,8 +79,8 @@ exports.addReturnSale = (req, res) => {
 
       const insertStockQuery = `
         INSERT INTO purchase_stocks
-        (user_id, location_id, sale_id, sale_return_id, product_id, quantity, process, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, location_id, sale_id, sale_return_id, product_id, quantity, process, sale_detail_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const insertTransactionQuery = `
@@ -341,7 +113,7 @@ exports.addReturnSale = (req, res) => {
 
       let completed = 0;
       for (const product of products) {
-        const { product_id, quantity, discount, retail } = product;
+        const { product_id, quantity, discount, retail, sale_detail_id } = product;
 
         const prodAmount = parseFloat(String(retail || 0).replace(/,/g, "")) || 0;
         const disc = parseFloat(String(discount || 0).replace(/,/g, "")) || 0;
@@ -359,7 +131,7 @@ exports.addReturnSale = (req, res) => {
           // Insert into purchase_stocks
           stockStmt.run([
             user_id, location_id, sale_id, sale_return_id,
-            product_id, qty, 'return', created_at, updated_at
+            product_id, qty, 'return v', sale_detail_id, created_at, updated_at
           ], function (err) {
             if (err) console.error("❌ Stock insert error:", err.message);
 
@@ -376,116 +148,58 @@ exports.addReturnSale = (req, res) => {
                 }
 
                 const transactionId = this.lastID;
-                const isWalkIn = customer_id === '3';
 
-                const insertTxnDetail = `
-                  INSERT INTO transaction_details 
-                  (location_id, transaction_details, v_id, coa_id, narration, debit, credit)
-                  VALUES (?, ?, ?, ?, ?, ?, ?)
-                `;
-
-                if (isWalkIn) {
-                  // Walk-in case
-                  const inventorySql = `SELECT head_code FROM chart_of_accounts WHERE head_name = 'Inventory'`;
-                  const cashSql = `SELECT head_code FROM chart_of_accounts WHERE head_name = 'Cash In Hand'`;
-                  const revenueSql = `SELECT head_code FROM chart_of_accounts WHERE head_name = 'Revenue'`;
-
-                  db.get(inventorySql, (errInv, invRow) => {
-                    if (errInv || !invRow) {
-                      return res.status(500).json({ error: "Failed to get inventory head_code", detail: errInv?.message });
-                    }
-
-                    db.get(cashSql, (errCash, cashRow) => {
-                      if (errCash || !cashRow) {
-                        return res.status(500).json({ error: "Failed to get cash head_code", detail: errCash?.message });
-                      }
-
-                      db.get(revenueSql, (errRev, revRow) => {
-                        if (errRev || !revRow) {
-                          return res.status(500).json({ error: "Failed to get revenue head_code", detail: errRev?.message });
-                        }
-
-                        const txns = [
-                          [location_id, null, transactionId, invRow.head_code, 'Inventory', cleanAmount, 0],
-                          [location_id, null, transactionId, cashRow.head_code, 'Cash In Hand', 0, cleanAmount],
-                          [location_id, null, transactionId, revRow.head_code, 'Revenue', cleanAmount, 0]
-                        ];
-
-                        let inserted = 0;
-                        for (const t of txns) {
-                          db.run(insertTxnDetail, t, function (errT) {
-                            if (errT) {
-                              return res.status(500).json({ error: "Failed to insert transaction detail", detail: errT.message });
-                            }
-
-                            inserted++;
-                            if (inserted === txns.length) {
-                              return res.status(200).json({
-                                success: true,
-                                message: "✅ Sale return and walk-in transaction entries added successfully",
-                                sale_return_id,
-                                transaction_id: transactionId
-                              });
-                            }
-                          });
-                        }
-                      });
-                    });
-                  });
-                } else {
-                  // Credit customer case
-                  const getCustomerHeadSql = `SELECT head_code FROM chart_of_accounts WHERE customer_id = ?`;
-                  db.get(getCustomerHeadSql, [customer_id], (errCust, custRow) => {
-                    if (errCust || !custRow) {
-                      return res.status(500).json({ error: "Failed to get customer head_code", detail: errCust?.message });
-                    }
-
-                    db.get(`SELECT head_code FROM chart_of_accounts WHERE head_name = 'Inventory'`, (errInv, invRow) => {
-                      if (errInv || !invRow) {
-                        return res.status(500).json({ error: "Failed to get inventory head_code", detail: errInv?.message });
-                      }
-
-                      db.get(`SELECT head_code FROM chart_of_accounts WHERE head_name = 'Revenue'`, (errRev, revRow) => {
-                        if (errRev || !revRow) {
-                          return res.status(500).json({ error: "Failed to get revenue head_code", detail: errRev?.message });
-                        }
-
-                        const txns = [
-                          [location_id, null, transactionId, invRow.head_code, 'Inventory', cleanAmount, 0],
-                          [location_id, null, transactionId, custRow.head_code, 'Customer', 0, cleanAmount],
-                          [location_id, null, transactionId, revRow.head_code, 'Revenue', cleanAmount, 0]
-                        ];
-
-                        let inserted = 0;
-                        for (const t of txns) {
-                          db.run(insertTxnDetail, t, function (errT) {
-                            if (errT) {
-                              return res.status(500).json({ error: "Failed to insert transaction detail", detail: errT.message });
-                            }
-
-                            inserted++;
-                            if (inserted === txns.length) {
-                              return res.status(200).json({
-                                success: true,
-                                message: "✅ Sale return and credit customer transaction entries added successfully",
-                                sale_return_id,
-                                transaction_id: transactionId
-                              });
-                            }
-                          });
-                        }
-                      });
-                    });
-                  });
+                // ✅ Transaction details
+                if (TotalDiscount > 0) {
+                  addTransactionDetail(transactionId, "Expenses", "Discount Applied on Sale Return", TotalDiscount, 0);
                 }
+
+                addTransactionDetail(transactionId, "Inventory", "Inventory Reduction Sale Return", 0, totalPurchase);
+                addTransactionDetail(transactionId, customer_id, "Cash In hand Return", 0, totalRetail, true);
+                addTransactionDetail(transactionId, "Revenue", "Revenue on Sale Return", 0, TotalProfit);
+
+                return res.status(200).json({
+                  message: 'Sale return saved successfully',
+                  sale_return_id,
+                  transactionId
+                });
               });
             }
           });
         });
       }
+
+      // ✅ Helper function
+      function addTransactionDetail(transactionId, account, narration, debit, credit, isCustomer = false) {
+        let sql, param;
+        if (isCustomer) {
+          sql = `SELECT head_code FROM chart_of_accounts WHERE customer_id=? LIMIT 1`;
+          param = [account];
+        } else {
+          sql = `SELECT head_code FROM chart_of_accounts WHERE head_name=? LIMIT 1`;
+          param = [account];
+        }
+
+        db.get(sql, param, (err, row) => {
+          if (err || !row) {
+            console.error("❌ Head Code not found for", account);
+            return;
+          }
+          const values = [location_id, null, transactionId, row.head_code, narration, debit, credit];
+          db.run(
+            `INSERT INTO transaction_details(location_id, transaction_details, v_id, coa_id, narration, debit, credit)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            values,
+            (err) => {
+              if (err) console.error("❌ Transaction detail insert error:", err.message);
+            }
+          );
+        });
+      }
     });
   });
 };
+
 
 
 exports.getSaleReturn = (req, res) => {

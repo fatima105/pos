@@ -4,6 +4,33 @@ html, body {
     margin: 0;
     padding: 0;
 }
+
+
+/* Make dropdown consistent and modern */
+.supplier {
+  border: 2px solid #0d6efd;   /* Bootstrap primary color */
+  border-radius: 6px;
+
+  padding-bottom: 10px !important;
+
+  font-size: 14px;
+  font-weight: 500;
+  background-color: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* On focus */
+.supplier:focus {
+  border-color: #0b5ed7;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  outline: none;
+}
+
+/* Placeholder (first option) */
+.supplier option:first-child {
+  color: #6c757d;
+}
+
 /* Force select2 box to match Bootstrap */
 .select2-container .select2-selection--single {
   height: 38px;                /* same as .form-control */
@@ -24,6 +51,10 @@ html, body {
   bottom: 0;
   left: 0;
   width: 100%;
+}
+  .select2-container--classic .select2-selection--single {
+  padding-bottom: 10px !important;
+  height: 40px !important; /* optional to align */
 }
 /* Main layout container */
 .main-container {
