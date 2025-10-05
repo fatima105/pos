@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Modules</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="scripts/style.css" />
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Content Area -->
+    <div class="content-container">
+      <div class="container-fluid bg-light py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">Modules</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item">
+                <a href="index.html" class="text-primary text-decoration-none">Home</a>
+              </li>
+              <li class="breadcrumb-item active text-muted" aria-current="page">
+                Create Module
+              </li>
+            </ol>
+          </nav>
+        </div>
+
+        <!-- Module Create Section -->
+        <div class="d-flex justify-content-center align-items-center vh-100">
+          <div class="card p-4 shadow-lg" style="width: 50%; max-width: 500px">
+            <h3 class="text-center">Create Module</h3>
+
+            <!-- Alert placeholder -->
+            <div id="alertPlaceholder"></div>
+
+            <!-- Module Form -->
+            <form id="moduleForm">
+              <div class="mb-3">
+                <label class="form-label">Module Name</label>
+                <input type="text" name="name" class="form-control" required />
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <input type="text" name="description" class="form-control" required />
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100">Submit</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <!-- Footer -->
+      <div id="footer-container"></div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/scripts.js"></script>
+  <script src="config.js"></script>
+
+  <script>
+    // Utility: Inline Alert
+    function showInlineAlert(message, type = "info") {
+      const alertPlaceholder = document.getElementById("alertPlaceholder");
+      if (!alertPlaceholder) return;
+
+      const alertHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      `;
+      alertPlaceholder.innerHTML = alertHTML;
+
+      setTimeout(() => {
+        const alert = alertPlaceholder.querySelector(".alert");
+        if (alert) alert.classList.remove("show");
+      }, 5000);
+    }
+
+    // Load Footer
+    function loadFooter() {
+      const footerContainer = document.getElementById("footer-container");
+      if (!footerContainer) return;
+
+      fetch("footer.html")
+        .then((res) => res.text())
+        .then((html) => {
+          footerContainer.innerHTML = html;
+          const yearEl = document.getElementById("year");
+          if (yearEl) yearEl.textContent = new Date().getFullYear();
+        })
+        .catch((err) => console.error("Error loading footer:", err));
+    }
+
+    // Load Sidebar
+    function loadSidebar() {
+      const sidebarContainer = document.getElementById("sidebar-container");
+      if (!sidebarContainer) return;
+
+      fetch("sidebar.html")
+        .then((res) => res.text())
+        .then((html) => (sidebarContainer.innerHTML = html))
+        .catch((err) => console.error("Error loading sidebar:", err));
+    }
+
+    // Form Submit Handler
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("moduleForm");
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const ModulesData = {
+            name: form.name.value,
+            description: form.description.value
+          };
+
+          try {
+            const res = await fetch(`${BASEURL}modules`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(ModulesData),
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+              showInlineAlert("✅ Module created successfully!", "success");
+              console.log("Response:", data);
+              form.reset();
+            } else {
+              showInlineAlert("❌ Error: " + data.error, "danger");
+            }
+          } catch (err) {
+            console.error("Error:", err);
+            showInlineAlert("⚠️ Something went wrong", "danger");
+          }
+        });
+      }
+
+      // Load components
+      loadFooter();
+      loadSidebar();
+    });
+  </script>
+</body>
+</html>

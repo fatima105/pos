@@ -2,6 +2,8 @@ const db = require('../db');
 
 
 exports.addReturnSale = (req, res) => {
+  
+
   const {
     sale_id,
     location_id,
@@ -11,6 +13,7 @@ exports.addReturnSale = (req, res) => {
     sale_date,
     sale_return_date,
     totalRetail,
+    totalDiscount,
     totalPurchase,
     amount,
     products = [],
@@ -21,13 +24,8 @@ exports.addReturnSale = (req, res) => {
   const TotalProfit = totalRetail - totalPurchase;
   console.log("PRODUCTS", products);
 
-  let TotalDiscount = 0;
-  for (const product of products) {
-    const { discount } = product;
-    TotalDiscount += parseFloat(discount) || 0;
-  }
 
-  console.log("Total Discount:", TotalDiscount.toFixed(2));
+
 
   // ✅ Clean amount (remove commas, ensure number)
   const cleanAmount = parseFloat(String(amount).replace(/,/g, "")) || 0;
@@ -149,14 +147,25 @@ exports.addReturnSale = (req, res) => {
 
                 const transactionId = this.lastID;
 
+
+                              if(totalDiscount>0){
+const insertDiscount = `
+  INSERT INTO Sale_Discount (sale_id, remarks, amount, created_at)
+  VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+`;
+db.run(insertDiscount, [sale_id, `Discount Applied on Sales Return ${voucher_no}`, totalDiscount], (err) => {
+  if (err) throw new Error("Insert Discount Failed: " + err.message);
+});
+        }
+
                 // ✅ Transaction details
-                if (TotalDiscount > 0) {
-                  addTransactionDetail(transactionId, "Expenses", "Discount Applied on Sale Return", TotalDiscount, 0);
+                if (totalDiscount > 0) {
+                  addTransactionDetail(transactionId, "Expenses", "Discount Applied on Sale Return",0,totalDiscount);
                 }
 
-                addTransactionDetail(transactionId, "Inventory", "Inventory Reduction Sale Return", 0, totalPurchase);
+                addTransactionDetail(transactionId, "Inventory", "Inventory Reduction Sale Return",  totalPurchase,0);
                 addTransactionDetail(transactionId, customer_id, "Cash In hand Return", 0, totalRetail, true);
-                addTransactionDetail(transactionId, "Revenue", "Revenue on Sale Return", 0, TotalProfit);
+                addTransactionDetail(transactionId, "Revenue", "Revenue on Sale Return", TotalProfit,0);
 
                 return res.status(200).json({
                   message: 'Sale return saved successfully',

@@ -7,6 +7,7 @@ const saleController = require('../controllers/saleController');
 router.get('/', saleController.getAllSale);
 router.get('/Details', saleController.getAllSaleDetails);
 router.get('/SpecificDetails/:id', saleController.getSpecificSaleDetail);
+router.get('/Disc', saleController.getSaleReturnDisc);
 
 router.get('/:id', saleController.getOneSale);
 router.delete('/:id', saleController.deleteSale);

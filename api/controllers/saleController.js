@@ -5,14 +5,13 @@ exports.getAllSale = (req, res) => {
   const query = `
     SELECT 
       s.*,
-      sd.amount AS total_discount,
+
       c.name AS customer_name 
     FROM 
       sale s
     LEFT JOIN 
       customer c ON s.customer_id = c.id
-    LEFT JOIN 
-      Sale_Discount sd ON s.id = sd.sale_id
+
     ORDER BY 
       s.id DESC
   `;
@@ -172,7 +171,12 @@ exports.getSpecificSaleDetail = (req, res) => {
 
 
 
-
+exports.getSaleReturnDisc=(req,res)=>{
+    db.all('SELECT * FROM Sale_Discount ORDER BY id DESC', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ SaleReturnDiscount: rows });
+    });
+};
 exports.getAllSaleDetails = (req, res) => {
     db.all('SELECT * FROM sale_details ORDER BY ID DESC', [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });

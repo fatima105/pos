@@ -379,6 +379,52 @@ db.run(`
 });
 
 db.run(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    location_id INTEGER,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL,
+    password TEXT NOT NULL,
+    status TEXT DEFAULT 'active'
+  )
+`, (err) => {
+  if (err) {
+    console.error('❌ Error creating users table:', err.message);
+  } else {
+    console.log('✅ users table created successfully.');
+  }
+});
+
+
+// Drop table if exists, then create it again
+
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS modules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT
+  )
+`, (err) => {
+  if (err) console.error('❌ Error creating modules table:', err.message);
+  else console.log('✅ modules table created successfully.');
+});
+
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS module_assign_user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    module_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (module_id) REFERENCES modules(id)
+  )
+`, (err) => {
+  if (err) console.error(' Error creating module_assign_user table:', err.message);
+  else console.log('module_assign_user table created successfully.');
+});
+db.run(`
   CREATE TABLE IF NOT EXISTS sale_return_detail (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     location_id TEXT,

@@ -228,13 +228,14 @@ setTimeout(() => {
 
       // 2. Insert Sale
       const insertSaleSql = `
-        INSERT INTO sale (
-          customer_id, location_id, invoice_no, sale_date, amount,
-          discount, payment_status, user_id, fbr_invoice, deleted_at, created_at, updated_at
-        ) VALUES (?, 1, NULL, ?, ?, 0, 1, ?, 0, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `;
+   INSERT INTO sale (
+  customer_id, location_id, invoice_no, sale_date, amount,
+  discount, payment_status, user_id, fbr_invoice, deleted_at, created_at, updated_at
+) 
+VALUES (?, 1, NULL, ?, ?, ?, 1, ?, 0, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`;
 
-      db.run(insertSaleSql, [customer, currentDate, amount, user_id], function (err) {
+
+      db.run(insertSaleSql, [customer, currentDate, amount,TotalDiscount, user_id], function (err) {
         if (err) throw new Error("Insert Sale Failed: " + err.message);
 
         const saleId = this.lastID;
@@ -247,7 +248,7 @@ const insertDiscount = `
   INSERT INTO Sale_Discount (sale_id, remarks, amount, created_at)
   VALUES (?, ?, ?, CURRENT_TIMESTAMP)
 `;
-db.run(insertDiscount, [saleId, 'Discount Applied on Sales', TotalDiscount], (err) => {
+db.run(insertDiscount, [saleId, `Discount Applied on Sales ${invoiceNo}`, TotalDiscount], (err) => {
   if (err) throw new Error("Insert Discount Failed: " + err.message);
 });
         }

@@ -16,6 +16,7 @@ router.get('/PayableReport', Reports.payableReport);
 router.get('/ReceivableReport', Reports.receivableReport);
 router.post('/ProfitLossReport', Reports.ProfitLossReport);
 router.post('/Sales',Reports.getSalesReport);
-
+router.post('/SalesDiscount',Reports.getLedgerDiscountReport);
+  
 router.post('/income-statements', Reports.incomeStatements);
 module.exports = router;

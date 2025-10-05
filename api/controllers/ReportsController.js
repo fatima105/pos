@@ -120,6 +120,97 @@ console.log(start_date, end_date, filter);
 };
 
 
+exports.getLedgerDiscountReport = async (req, res) => {
+  try {
+    const { start_date, end_date } = req.body;
+    console.log("hi", start_date, end_date);
+
+    if (!start_date || !end_date) {
+      return res.status(400).json({
+        error: "start_date and end_date are required",
+      });
+    }
+
+    // ✅ Promisify sqlite3
+    const dbAll = util.promisify(db.all).bind(db);
+    const dbGet = util.promisify(db.get).bind(db);
+
+    // ✅ Fetch Expense Head Codes
+    const headCodes = await dbAll(`
+      SELECT head_code
+      FROM chart_of_accounts
+      WHERE head_name = 'Expenses'
+    `);
+
+    const results = [];
+
+    for (const row of headCodes) {
+      const head_code = row.head_code;
+
+      // 🔎 Opening Balance
+      const openingRow = await dbGet(
+        `SELECT IFNULL(SUM(td.debit - td.credit), 0) as opening_balance
+         FROM Transaction_details td
+         JOIN "Transaction" trx ON trx.id = td.v_id
+         WHERE td.coa_id = ?
+           AND (trx.type = 'Sale Return' OR trx.type = 'Sale')
+           AND trx.date < ?`,
+        [head_code, start_date]
+      );
+
+      const opening_balance = Number(openingRow?.opening_balance || 0);
+
+      // 🔎 Ledger Rows (transactions in range)
+      const ledgerRows =
+        (await dbAll(
+          `SELECT trx.date, td.narration,
+                  COALESCE(td.debit,0) AS debit,
+                  COALESCE(td.credit,0) AS credit
+           FROM Transaction_details td
+           JOIN "Transaction" trx ON td.v_id = trx.id
+           WHERE td.coa_id = ? 
+             AND trx.date BETWEEN ? AND ?
+             AND (trx.type = 'Sale Return' OR trx.type = 'Sale')
+           ORDER BY trx.date ASC`,
+          [head_code, start_date, end_date]
+        )) || [];
+
+      // 🔎 Closing Balance
+      const closingRow =
+        (await dbGet(
+          `SELECT COALESCE(SUM(td.debit),0) AS debit, 
+                  COALESCE(SUM(td.credit),0) AS credit
+           FROM Transaction_details td
+           JOIN "Transaction" trx ON td.v_id = trx.id
+           WHERE td.coa_id = ? 
+             AND (trx.type = 'Sale Return' OR trx.type = 'Sale')
+             AND trx.date <= ?`,
+          [head_code, end_date]
+        )) || { debit: 0, credit: 0 };
+
+      const closing_balance =
+        Number(closingRow.debit) - Number(closingRow.credit);
+
+      // ✅ Push into results
+      results.push({
+        head_code,
+        opening_balance,
+        ledgerRows,
+        closing_balance,
+      });
+    }
+
+    return res.json({
+      message: "Expense Ledger Discount Report fetched successfully",
+      data: results,
+    });
+  } catch (error) {
+    console.error("❌ Error in getLedgerDiscountReport:", error);
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch expense head ledger report" });
+  }
+};
 
 
 // Low Stock Product Report API

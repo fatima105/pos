@@ -1,7 +1,8 @@
 // server.js
 const express = require('express');
 const cors = require('cors');
-
+const modulesRoutes = require("./routes/modulesRoutes");
+const assignRoutes = require("./routes/assignRoutes");
 const unitRoutes = require('./routes/unitRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const taxRoutes = require('./routes/taxRoutes');
@@ -21,6 +22,7 @@ const cashJournalVoucher = require('./routes/cashJournalVoucherRoutes');
 const  cashReceivedRoutes = require('./routes/cashReceivedRoutes');
 const  Reports = require('./routes/Reports');
 const importRoutes = require('./routes/Import'); 
+const Users = require('./routes/Users'); 
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -51,13 +53,13 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/CashPayment', CashPaymentRoutes); 
 app.use('/api/CashReceived', cashReceivedRoutes); 
 app.use('/api/CashJournalVoucher', cashJournalVoucher); 
+app.use('/api/users', Users);   // lowercase "users"
+
 app.use('/api/Reports', Reports); 
-Reports.stack.forEach((r) => {
-    if (r.route && r.route.path) {
-        const methods = Object.keys(r.route.methods).join(', ').toUpperCase();
-        console.log(`${methods} /api/Reports${r.route.path}`);
-    }
-});
+
+
+app.use("/api/modules", modulesRoutes);
+app.use("/api/assign", assignRoutes);
 const PORT = 8000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
