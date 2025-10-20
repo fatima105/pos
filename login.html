@@ -1,86 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdminERP Login</title>
-    <!-- Bootstrap CSS -->
-<!-- Local DataTables CSS -->
-<link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
-<link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
-  <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AdminERP Login</title>
 
-    <style>
-        body {
-            background-color: #e9ecef;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .login-card {
-            width: 350px;
-            border-radius: 10px;
-        }
-    </style>
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="scripts/jquery.dataTables.min.css" />
+  <link rel="stylesheet" href="scripts/buttons.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+  <style>
+    body {
+      background-color: #e9ecef;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .login-card {
+      width: 350px;
+      border-radius: 10px;
+    }
+  </style>
 </head>
 <body>
 
 <div class="card login-card shadow" style="border-top: 3px solid #007bff;">
+  <div class="card-header text-center bg-white border-0">
+    <h3><strong>Admin</strong><span class="text-primary">ERP</span></h3>
+    <hr>
+  </div>
 
-    <div class="card-header text-center bg-white border-0">
-        <h3><strong>Admin</strong><span class="text-primary">ERP</span></h3>
-        <hr>
-    </div>
-    <div class="card-body">
-        <p class="text-center">Sign in to start your session</p>
-        <form id="loginForm">
-            <!-- Email Input -->
-            <div class="mb-3 input-group">
-                <input type="email" value="admin@gmail.com" class="form-control" id="email" placeholder="Email" required>
-                <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
-            </div>
-            <!-- Password Input -->
-            <div class="mb-3 input-group">
-                <input type="password" value="password"class="form-control" id="password" placeholder="Password" required>
-                <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-            </div>
-        
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="rememberMe">
-                    <label class="form-check-label" for="rememberMe">Remember Me</label>
-                </div>
-                <button type="submit" class="btn btn-primary">Sign In</button>
-            </div>
-        </form>
-        
-    
-    </div>
-<!-- Forgot Password Link -->
-<div class="card-footer text-center bg-white border-0">
-    <a href="#" style="outline: none; text-decoration: none;" class="text-primary">I forgot my password</a>
+  <!-- 🔔 Inline Alert Placeholder -->
+  <div id="alertPlaceholder" class="px-3"></div>
+
+  <div class="card-body">
+    <p class="text-center">Sign in to start your session</p>
+
+    <form id="loginForm">
+      <div class="mb-3 input-group">
+        <input type="email" class="form-control" id="email" placeholder="Email" required>
+        <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+      </div>
+
+      <div class="mb-3 input-group">
+        <input type="password" class="form-control"  id="password" placeholder="Password" required>
+        <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="rememberMe">
+          <label class="form-check-label" for="rememberMe">Remember Me</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Sign In</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- <div class="card-footer text-center bg-white border-0">
+    <a href="#" class="text-primary" style="text-decoration: none;">I forgot my password</a>
+  </div> -->
 </div>
 
-</div>
-
-<!-- Bootstrap Bundle with Popper -->
 <script src="scripts/bootstrap.bundle.min.js"></script>
+<script src="config.js"></script>
 <script>
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent traditional form submission
+  // ✅ Inline Alert Function
+  function showInlineAlert(message, type = "danger") {
+    const alertPlaceholder = document.getElementById("alertPlaceholder");
+    if (!alertPlaceholder) return;
 
-        // Simulating a login check (Replace with real authentication)
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show mt-2" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    alertPlaceholder.innerHTML = alertHTML;
 
-        if (email === "admin@gmail.com" && password === "password") {
-            window.location.href = "index.html"; // Redirect to dashboard
-        } else {
-            alert("Invalid credentials. Try again.");
+    // Auto-hide alert after 4 seconds
+    setTimeout(() => {
+      alertPlaceholder.innerHTML = "";
+    }, 4000);
+  }
+
+  // ✅ Handle Login Submit
+document.getElementById('loginForm').addEventListener('submit', async function(event) {
+  event.preventDefault();
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+try {
+  const response = await fetch(`${BASEURL}users/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const result = await response.json();
+  console.log("🔐 Login Response:", result);
+
+  if (result.success) {
+    const { id, name, email, role } = result.user;
+
+    // 🧠 Store user data in localStorage
+    localStorage.setItem("userId", id);
+    localStorage.setItem("userName", name);
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userRole", role);
+
+    console.log(`👤 Logged-in User → ID: ${id}, Name: ${name}, Role: ${role}`);
+
+    // ✅ Role-based redirect logic
+    if (role === "admin" || role === "user") {
+      const licenseUrl = `${BASEURL}users/license/${id}`;
+      console.log(`🔍 Checking license for user ID: ${id}`);
+
+      try {
+        const licenseResponse = await fetch(licenseUrl);
+
+        // ❌ Handle invalid responses
+        if (!licenseResponse.ok) {
+          const errText = await licenseResponse.text();
+          console.warn(`⚠️ License API returned error: ${licenseResponse.status} ${errText}`);
+
+          if (licenseResponse.status === 404) {
+            console.log("📁 No license found → Redirecting to license upload page...");
+            window.location.href = `license-upload.html?userId=${id}`;
+            return;
+          }
+
+          throw new Error(`License API error: ${licenseResponse.statusText}`);
         }
-    });
+
+        // ✅ Parse license data
+        const licenseData = await licenseResponse.json();
+        console.log("✅ License API Response:", licenseData);
+
+        if (!licenseData || licenseData.error) {
+          console.warn("⚠️ No license found → Redirecting to upload page...");
+          window.location.href = `license-upload.html?userId=${id}`;
+          return;
+        }
+
+        // ✅ Handle expired license
+        // if (licenseData.expired === true) {
+        //   console.warn("⚠️ License expired → Showing alert and redirecting...");
+        //   showInlineAlert("⚠️ Your license has expired. Redirecting to license check page...", "warning");
+
+        //   setTimeout(() => {
+        //     window.location.href = `license-upload.html?userId=${id}`;
+        //   }, 5000); // ⏱️ Redirect after 5 seconds
+        //   return;
+        // }
+
+        // ✅ Active license → Proceed to dashboard
+        console.log("🎉 Active license found → Redirecting to dashboard...");
+        window.location.href = "index.html";
+
+      } catch (licenseError) {
+        console.error("❌ License check failed:", licenseError);
+        showInlineAlert("License check failed. Redirecting to dashboard.", "warning");
+
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 3000);
+      }
+
+    } else if (role === "superadmin") {
+      console.log("👑 Superadmin login → Redirecting to dashboard...");
+      window.location.href = "index.html";
+
+    } else {
+      console.log("⚙️ Other role detected → Redirecting to dashboard...");
+      window.location.href = "index.html";
+    }
+
+  } else {
+    // ❌ Invalid credentials
+    console.warn("🚫 Invalid credentials:", result.message);
+    showInlineAlert(result.message || "Invalid email or password.", "danger");
+  }
+
+} catch (error) {
+  console.error("💥 Login Error:", error);
+  showInlineAlert("Something went wrong. Please try again later.", "warning");
+}
+
+
+
+});
+
+
 </script>
 
 </body>

@@ -140,7 +140,33 @@
     <script src="scripts/Supplierscripts.js"></script>
 
 
+<script>
+  $(document).ready(async function () {
+    try {
+      // Load Footer
+      const footerResponse = await fetch("scripts/footer.html");
+      const footerHTML = await footerResponse.text();
+      $("#footer-container").html(footerHTML);
+      $("#year").text(new Date().getFullYear());
 
+      // Load Sidebar
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      $("#sidebar-container").html(sidebarHTML);
+
+      // Dynamically load sidebar script
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar or footer:", err);
+    }
+
+  });
+</script>
 
     
     

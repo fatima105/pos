@@ -112,105 +112,111 @@
 
     <script src="config.js"></script>
 
-    <script>
-      // Download PDF
-      document.getElementById("downloadPdf").addEventListener("click", function () {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 14;
+<script>
+  $(document).ready(function () {
+    // ✅ PDF download button
+    document.getElementById("downloadPdf").addEventListener("click", function () {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 14;
 
-        // Left side: Company Name
-        doc.setFontSize(14);
-        doc.setFont(undefined, "bold");
-        doc.text("ALIMART", margin, 12);
+      // Header
+      doc.setFontSize(14);
+      doc.setFont(undefined, "bold");
+      doc.text("ALIMART", margin, 12);
 
-        // Right side: Report Title
-        const reportTitle = "Receivable Report";
-        doc.setFontSize(14);
-        doc.setFont(undefined, "bold");
-        const reportWidth = doc.getTextWidth(reportTitle);
-        doc.text(reportTitle, pageWidth - margin - reportWidth, 12);
+      const reportTitle = "Receivable Report";
+      const reportWidth = doc.getTextWidth(reportTitle);
+      doc.text(reportTitle, pageWidth - margin - reportWidth, 12);
 
-        // Table
-        doc.autoTable({
-          html: "#ReceivableReport",
-          startY: 20,
-          theme: "grid",
-          headStyles: { fillColor: [220, 53, 69] },
-        });
-
-        // Prepared / Approved
-        const finalY = doc.lastAutoTable.finalY || 30;
-        const lineWidth = 70;
-        const spaceBetween = 50;
-        const startX = margin;
-
-        doc.setFontSize(12);
-        doc.setFont(undefined, "bold");
-        doc.text("Prepared By:", startX, finalY + 25);
-        doc.setFont(undefined, "normal");
-        doc.line(startX, finalY + 32, startX + lineWidth, finalY + 32);
-
-        const approvedX = startX + lineWidth + spaceBetween;
-        doc.setFont(undefined, "bold");
-        doc.text("Approved By:", approvedX, finalY + 25);
-        doc.setFont(undefined, "normal");
-        doc.line(approvedX, finalY + 32, approvedX + lineWidth, finalY + 32);
-
-        doc.save("Receivable_Report.pdf");
+      // Table
+      doc.autoTable({
+        html: "#ReceivableReport",
+        startY: 20,
+        theme: "grid",
+        headStyles: { fillColor: [220, 53, 69] },
       });
 
-      // Load Sidebar
-      fetch("sidebar.html")
-        .then((res) => res.text())
-        .then((html) => {
-          document.getElementById("sidebar-container").innerHTML = html;
+      // Footer section
+      const finalY = doc.lastAutoTable.finalY || 30;
+      const lineWidth = 70;
+      const spaceBetween = 50;
+      const startX = margin;
+
+      doc.setFontSize(12);
+      doc.setFont(undefined, "bold");
+      doc.text("Prepared By:", startX, finalY + 25);
+      doc.line(startX, finalY + 32, startX + lineWidth, finalY + 32);
+
+      const approvedX = startX + lineWidth + spaceBetween;
+      doc.text("Approved By:", approvedX, finalY + 25);
+      doc.line(approvedX, finalY + 32, approvedX + lineWidth, finalY + 32);
+
+      doc.save("Receivable_Report.pdf");
+    });
+
+    // ✅ Load Sidebar dynamically
+    (async () => {
+      try {
+        const sidebarResponse = await fetch("sidebar.html");
+        const sidebarHTML = await sidebarResponse.text();
+        $("#sidebar-container").html(sidebarHTML);
+
+        const sidebarScript = document.createElement("script");
+        sidebarScript.src = "scripts/scripts.js";
+        sidebarScript.onload = () => {
+          if (typeof initSidebar === "function") initSidebar();
+        };
+        document.body.appendChild(sidebarScript);
+      } catch (error) {
+        console.error("Error loading sidebar:", error);
+      }
+    })(); // ✅ invoked immediately
+
+    // ✅ Load Receivable Report
+    fetch(`${BASEURL}Reports/ReceivableReport`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.data || data.data.length === 0) {
+          $("#ReceivableReport tbody").html(
+            `<tr><td colspan="5">No Receivable Report found.</td></tr>`
+          );
+          return;
+        }
+
+        let rows = "";
+        data.data.forEach((p, i) => {
+          rows += `
+            <tr class="${p.balance < 0 ? "low-balance" : ""}">
+              <td>${i + 1}</td>
+              <td>${p.customer_name || "N/A"}</td>
+              <td>${p.total_debit || 0}</td>
+              <td>${p.total_credit || 0}</td>
+              <td>${p.balance || 0}</td>
+            </tr>
+          `;
         });
 
-      // Load Receivable Report
-      $(document).ready(function () {
-        fetch(`${BASEURL}Reports/ReceivableReport`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (!data.data || data.data.length === 0) {
-              $("#ReceivableReport tbody").html(
-                `<tr><td colspan="5">No Receivable Report found.</td></tr>`
-              );
-              return;
-            }
+        $("#ReceivableReport tbody").html(rows);
 
-            let rows = "";
-            data.data.forEach((p, i) => {
-              rows += `
-                <tr class="${p.balance < 0 ? "low-balance" : ""}">
-                  <td>${i + 1}</td>
-                  <td>${p.customer_name || "N/A"}</td>
-                  <td>${p.total_debit || 0}</td>
-                  <td>${p.total_credit || 0}</td>
-                  <td>${p.balance || 0}</td>
-                </tr>
-              `;
-            });
-
-            $("#ReceivableReport tbody").html(rows);
-
-            // DataTable Init
-            $("#ReceivableReport").DataTable({
-              dom: "frtip",
-              searching: false,
-              paging: true,
-              ordering: true,
-              order: [[4, "desc"]], // sort by balance
-            });
-          })
-          .catch((err) => {
-            console.error("❌ Error loading receivable report:", err);
-            $("#ReceivableReport tbody").html(
-              `<tr><td colspan="5">Failed to load report</td></tr>`
-            );
-          });
+        // DataTable Init
+        $("#ReceivableReport").DataTable({
+          dom: "frtip",
+          searching: false,
+          paging: true,
+          ordering: true,
+          order: [[4, "desc"]],
+        });
+      })
+      .catch((err) => {
+        console.error("❌ Error loading receivable report:", err);
+        $("#ReceivableReport tbody").html(
+          `<tr><td colspan="5">Failed to load report</td></tr>`
+        );
       });
-    </script>
+  });
+</script>
+
   </body>
 </html>

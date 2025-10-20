@@ -92,9 +92,23 @@
   document.getElementById("toDate").setAttribute("max", today);
 
   // Load Sidebar
-  fetch("sidebar.html")
-    .then(res => res.text())
-    .then(html => document.getElementById("sidebar-container").innerHTML = html);
+ document.addEventListener("DOMContentLoaded", async function () {
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      $("#sidebar-container").html(sidebarHTML); // ✅ correct selector
+
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
+  });
 
   $(document).ready(function () {
     $(".select2").select2({ placeholder: "Select Customer", allowClear: true });

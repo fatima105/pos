@@ -112,116 +112,117 @@
    
     <script src="scripts/scripts.js"></script>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-          // Load Footer
-          fetch("scripts/footer.html")
-            .then((response) => response.text())
-            .then((data) => {
-              document.getElementById("footer-container").innerHTML = data;
-              document.getElementById("year").textContent =
-                new Date().getFullYear();
-            })
-            .catch((error) => console.error("Error loading footer:", error));
-      
-          // Load Sidebar
-          fetch("sidebar.html")
-            .then((response) => response.text())
-            .then(
-              (html) =>
-                (document.getElementById("sidebar-container").innerHTML = html)
-            );
-        });
-      
-  
-  
-    // This function extracts query parameters from the URL
+<script>
+  document.addEventListener("DOMContentLoaded", async function () {
+    // ✅ Load Footer
+    try {
+      const footerResponse = await fetch("scripts/footer.html");
+      const footerHTML = await footerResponse.text();
+      document.getElementById("footer-container").innerHTML = footerHTML;
+      document.getElementById("year").textContent = new Date().getFullYear();
+    } catch (error) {
+      console.error("Error loading footer:", error);
+    }
+
+    // ✅ Load Sidebar
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      const sidebarContainer = document.getElementById("sidebar-container");
+      sidebarContainer.innerHTML = sidebarHTML;
+
+      // Load sidebar script AFTER sidebar is inserted
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js"; // Ensure initSidebar() exists there
+      sidebarScript.onload = function () {
+        if (typeof initSidebar === "function") {
+          initSidebar(); // Initialize sidebar (user info, links, etc.)
+        }
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
+
+    // ✅ Extract category ID from query params
     function getQueryParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(param);
     }
-  
-    const categoryId = getQueryParam('id');
-    console.log('Category ID:', categoryId);
-    document.getElementById('categoryId').value = categoryId;
+
+    const categoryId = getQueryParam("id");
+    console.log("Category ID:", categoryId);
+    document.getElementById("categoryId").value = categoryId || "";
+
+    // ✅ Fetch category data if ID is present
     if (categoryId) {
-  const apiUrl = `${BASEURL}Category/${categoryId}`;
-  
-  fetch(apiUrl)
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error("Network response was not ok");
+      const apiUrl = `${BASEURL}Category/${categoryId}`;
+      try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+
+        if (data && typeof data === "object") {
+          const { name, status, description } = data;
+          document.getElementById("name").value = name || "";
+          document.getElementById("status").value = status || "Active";
+          document.getElementById("description").value = description || "";
+        } else {
+          throw new Error("Invalid data format");
+        }
+      } catch (err) {
+        console.error("Error fetching category data:", err);
       }
-      return res.json();
-    })
-    .then((data) => {
-      if (data && typeof data === "object") {
-        const { name, status,description } = data;
+    } else {
+      console.log("No Category ID found in the URL.");
+    }
 
-        document.getElementById("name").value = name || "";
-        document.getElementById("status").value = status || "Active";
-        document.getElementById("description").value = description;
-        
-      } else {
-        throw new Error("Invalid data format");
-      }
-    })
-    .catch((err) => {
-      console.error("Error fetching category data:", err);
-  
-    });
-} else {
-  console.log("No Category ID found in the URL.");
-}
+    // ✅ Handle Category Update
+    const CategoryUpdate = document.getElementById("CategoryUpdate");
+    if (CategoryUpdate) {
+      CategoryUpdate.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
+        const categoryId = document.getElementById("categoryId").value;
+        const name = document.getElementById("name").value.trim();
+        const description = document.getElementById("description").value.trim();
+        const status = document.getElementById("status").value;
 
-//Update Category
+        console.log(name, description, status, categoryId);
 
-        const CategoryUpdate = document.getElementById("CategoryUpdate");
-      
-        CategoryUpdate.addEventListener("submit", (e) => {
-          e.preventDefault();
-          const categoryId = document.getElementById("categoryId").value;
-          const name = document.getElementById("name").value.trim();
-          const description = document.getElementById("description").value.trim();
-          const status = document.getElementById("status").value;
-      console.log(name,description,status,categoryId);
-          if (name === "" || status === ""|| description === "") {
-            const errorModal = new bootstrap.Modal(document.getElementById('ErrorModal'));
-            errorModal.show();
+        if (!name || !description || !status) {
+          const errorModal = new bootstrap.Modal(document.getElementById("ErrorModal"));
+          errorModal.show();
+          return;
+        }
+
+        const apiUrl = `${BASEURL}Category`;
+        try {
+          const res = await fetch(apiUrl, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, status, id: categoryId, description }),
+          });
+
+          const data = await res.json();
+          if (data.status === "success") {
+            localStorage.setItem("globalAlertMessage", "✅ Category Data Updated");
+            localStorage.setItem("globalAlertType", "success");
+            window.location.href = "Categories.html";
           } else {
-            const apiUrl = `${BASEURL}Category`;
-      
-            fetch(apiUrl, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ name, status, id: categoryId ,description})
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.status=="success") {
-            
-localStorage.setItem('globalAlertMessage',"Category Data Updated");
-localStorage.setItem('globalAlertType', 'success');
-              
-                  window.location.href = "Categories.html"; // change to your target page
-           
-                } else {
-                        
-localStorage.setItem('globalAlertMessage',"Category Not Updated");
-localStorage.setItem('globalAlertType', 'danger');
-                }
-              })
-              .catch((err) => {
-                console.error("Error:", err);
-   localStorage.setItem('globalAlertMessage',"Failed to Update Category");
-localStorage.setItem('globalAlertType', 'danger');
-              });
+            localStorage.setItem("globalAlertMessage", "⚠️ Category Not Updated");
+            localStorage.setItem("globalAlertType", "danger");
           }
-        });
-      </script>
+        } catch (err) {
+          console.error("Error:", err);
+          localStorage.setItem("globalAlertMessage", "❌ Failed to Update Category");
+          localStorage.setItem("globalAlertType", "danger");
+        }
+      });
+    }
+  });
+</script>
+
       
   </body>
 </html>

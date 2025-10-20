@@ -13,17 +13,15 @@
       "**/*",
       "!node_modules/.cache",
       "main.js",
-      "index.html",
-      "api/**",
-      "node_modules/**",
-      "package.json"
+      "index.html"
     ],
     "extraResources": [
       {
-        "from": "api",
-        "to": "api"
+        "from": "api/db.js",
+        "to": "api/db.js"
       }
     ],
+    "asar": true,
     "win": {
       "target": "nsis"
     }
@@ -34,6 +32,7 @@
   },
   "dependencies": {
     "archiver": "^7.0.1",
+    "bcrypt": "^6.0.0",
     "electron-store": "^11.0.0",
     "pdfkit": "^0.17.1"
   }

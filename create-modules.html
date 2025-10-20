@@ -105,15 +105,23 @@
     }
 
     // Load Sidebar
-    function loadSidebar() {
-      const sidebarContainer = document.getElementById("sidebar-container");
-      if (!sidebarContainer) return;
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const sidebarResponse = await fetch("sidebar.html");
+    const sidebarHTML = await sidebarResponse.text();
+    document.getElementById("sidebar-container").innerHTML = sidebarHTML;
 
-      fetch("sidebar.html")
-        .then((res) => res.text())
-        .then((html) => (sidebarContainer.innerHTML = html))
-        .catch((err) => console.error("Error loading sidebar:", err));
-    }
+    // Load sidebar script dynamically
+    const sidebarScript = document.createElement("script");
+    sidebarScript.src = "scripts/scripts.js";
+    sidebarScript.onload = () => {
+      if (typeof initSidebar === "function") initSidebar();
+    };
+    document.body.appendChild(sidebarScript);
+  } catch (err) {
+    console.error("Error loading sidebar:", err);
+  }
+});
 
     // Form Submit Handler
     document.addEventListener("DOMContentLoaded", () => {

@@ -113,14 +113,24 @@
     }
 
     // Load Sidebar
-    function loadSidebar() {
-      const sidebarContainer = document.getElementById("sidebar-container");
-      if (!sidebarContainer) return;
-      fetch("sidebar.html")
-        .then((res) => res.text())
-        .then((html) => (sidebarContainer.innerHTML = html))
-        .catch((err) => console.error("Error loading sidebar:", err));
-    }
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const sidebarResponse = await fetch("sidebar.html");
+    const sidebarHTML = await sidebarResponse.text();
+    document.getElementById("sidebar-container").innerHTML = sidebarHTML;
+
+    // Load sidebar script dynamically
+    const sidebarScript = document.createElement("script");
+    sidebarScript.src = "scripts/scripts.js";
+    sidebarScript.onload = () => {
+      if (typeof initSidebar === "function") initSidebar();
+    };
+    document.body.appendChild(sidebarScript);
+  } catch (err) {
+    console.error("Error loading sidebar:", err);
+  }
+
+});
 
     // Fetch Users
     async function loadUsers() {

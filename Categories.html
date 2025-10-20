@@ -113,89 +113,107 @@
   <script src="scripts/jquery-3.6.0.min.js"></script>
  <script src="scripts/bootstrap.bundle.min.js"></script>
     <script src="config.js"></script>
-    <script>
-      const apiUrl = `${BASEURL}Category`;
-    
-      fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-          const tbody = document.getElementById('categoryTableBody');
-          tbody.innerHTML = ''; // Clear existing rows
-    
-          if (data.Category && data.Category.length > 0) {
-            data.Category.forEach((category, index) => {
-              const row = `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td>${category.name}</td>
-                  <td>${category.description}</td>
-                  <td>
-                    ${category.status === 'Active' 
-                      ? ` 
-                        <span class="badge text-dark d-flex align-items-center">
-                          <button class="btn btn-sm btn-success rounded-circle me-1">
-                            <i class="fa-solid fa-check"></i>
-                          </button>
-                          Active
-                        </span>` 
-                      : `
-                        <span class="badge text-dark d-flex align-items-center">
-                          <button class="btn btn-sm btn-danger rounded-circle me-1">
-                            <i class="fa-solid fa-ban"></i>
-                          </button>
-                          Block
-                        </span>`
-                    }
-                  </td>
-                  <td>
-                    <div class="d-flex gap-2">
-                      <a href="edit-category.html?id=${category.id}" class="btn btn-sm">
-                        <i style="color:blue;" class="fas fa-edit"></i>
-                      </a>
-                    </div>
-                  </td>
-                </tr>
-              `;
-              tbody.insertAdjacentHTML('beforeend', row);
-            });
-          } else {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No data found</td></tr>';
-          }
+<script>
+  document.addEventListener("DOMContentLoaded", async function () {
+    const apiUrl = `${BASEURL}Category`;
 
-          // Re-initialize DataTable after data has been inserted
-          $('#categoryTable').DataTable({
-            dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
-            buttons: [
-              { extend: "copy", className: "btn btn-sm" },
-              { extend: "csv", className: "btn btn-sm" },
-              { extend: "excel", className: "btn btn-sm" },
-              { extend: "pdf", className: "btn btn-sm" },
-              { extend: "print", className: "btn btn-sm" },
-            ],
-          });
-        })
-        .catch(error => {
-          console.error('Error fetching category data:', error);
+    try {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+
+      const tbody = document.getElementById("categoryTableBody");
+      tbody.innerHTML = ""; // Clear existing rows
+
+      if (data.Category && data.Category.length > 0) {
+        data.Category.forEach((category, index) => {
+          const row = `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${category.name}</td>
+              <td>${category.description}</td>
+              <td>
+                ${
+                  category.status === "Active"
+                    ? `
+                      <span class="badge text-dark d-flex align-items-center">
+                        <button class="btn btn-sm btn-success rounded-circle me-1">
+                          <i class="fa-solid fa-check"></i>
+                        </button>
+                        Active
+                      </span>`
+                    : `
+                      <span class="badge text-dark d-flex align-items-center">
+                        <button class="btn btn-sm btn-danger rounded-circle me-1">
+                          <i class="fa-solid fa-ban"></i>
+                        </button>
+                        Block
+                      </span>`
+                }
+              </td>
+              <td>
+                <div class="d-flex gap-2">
+                  <a href="edit-category.html?id=${category.id}" class="btn btn-sm">
+                    <i style="color:blue;" class="fas fa-edit"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          `;
+          tbody.insertAdjacentHTML("beforeend", row);
         });
-    
-      document.addEventListener("DOMContentLoaded", function () {
-        // Load Footer
-        fetch("scripts/footer.html")
-          .then((response) => response.text())
-          .then((data) => {
-            document.getElementById("footer-container").innerHTML = data;
-            document.getElementById("year").textContent = new Date().getFullYear();
-          })
-          .catch((error) => console.error("Error loading footer:", error));
+      } else {
+        tbody.innerHTML =
+          '<tr><td colspan="5" class="text-center">No data found</td></tr>';
+      }
 
-        // Load Sidebar
-        fetch("sidebar.html")
-          .then((response) => response.text())
-          .then(
-            (html) =>
-              (document.getElementById("sidebar-container").innerHTML = html)
-          );
+      // ✅ Initialize DataTable
+      if ($.fn.DataTable.isDataTable("#categoryTable")) {
+        $("#categoryTable").DataTable().destroy();
+      }
+
+      $("#categoryTable").DataTable({
+        dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+        buttons: [
+          { extend: "copy", className: "btn btn-sm" },
+          { extend: "csv", className: "btn btn-sm" },
+          { extend: "excel", className: "btn btn-sm" },
+          { extend: "pdf", className: "btn btn-sm" },
+          { extend: "print", className: "btn btn-sm" },
+        ],
       });
-    </script>
+    } catch (error) {
+      console.error("Error fetching category data:", error);
+    }
+
+    // ✅ Load Footer
+    try {
+      const footerResponse = await fetch("scripts/footer.html");
+      const footerHTML = await footerResponse.text();
+      document.getElementById("footer-container").innerHTML = footerHTML;
+      document.getElementById("year").textContent = new Date().getFullYear();
+    } catch (error) {
+      console.error("Error loading footer:", error);
+    }
+
+    // ✅ Load Sidebar
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      const sidebarContainer = document.getElementById("sidebar-container"); // Make sure this div exists
+      sidebarContainer.innerHTML = sidebarHTML;
+
+      // Load and initialize sidebar script
+      const script = document.createElement("script");
+      script.src = "scripts/scripts.js"; // should contain initSidebar()
+      script.onload = function () {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(script);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
+  });
+</script>
+
   </body>
 </html>

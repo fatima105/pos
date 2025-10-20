@@ -168,11 +168,25 @@ function generateProfitLossReport(apiResponse){
 }
 
   // ✅ Fetch Report Button
-  $(document).ready(function () {
-    fetch("sidebar.html").then(r => r.text()).then(html => {
-      document.getElementById("sidebar-container").innerHTML = html;
-    });
+  $(document).ready(async function () {
+ try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      const sidebarContainer = document.getElementById("sidebar-container");
+$("#sidebar-container").html(sidebarHTML);
 
+      // Load sidebar script AFTER sidebar is inserted
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js"; // Ensure initSidebar() exists there
+      sidebarScript.onload = function () {
+        if (typeof initSidebar === "function") {
+          initSidebar(); // Initialize sidebar (user info, links, etc.)
+        }
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
     $("#getReportBtn").on("click", async function () {
       const startDate = $("#fromDate").val();
       const endDate = $("#toDate").val();

@@ -39,11 +39,8 @@
   <ul class="nav nav-pills flex-column">
 
   <!-- Dashboard -->
-<li class="nav-item">
-  <a href="index.html" class="nav-link text-white">
-    <i class="fa-solid fa-home me-2"></i> Dashboard
-  </a>
-</li>
+
+<li id="UserInfo"></li>
 
 <!-- Master Settings -->
 <li class="nav-item">
@@ -78,6 +75,8 @@
   <div class="collapse" id="settingsDropdown">
     <ul class="nav flex-column ps-4">
        <li><a href="add-users.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Add Users</a></li>
+             <li><a href="view-users.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i>  View Users</a></li>
+                    <li><a href="check-license-users.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i>  Check License</a></li>
         <li><a href="assign-modules.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Assign Modules</a></li>
        <li><a href="create-modules.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> Create Modules</a></li>
       <li><a href="profile.html" class="nav-link text-white"><i class="fa-regular fa-circle me-3"></i> View Profile</a></li>
@@ -172,36 +171,3 @@
 </div>
 
 <!-- Scripts -->
-<script src="scripts/jquery-3.6.0.min.js"></script>
-<script src="scripts/bootstrap.bundle.min.js"></script>
-
-<script>
-  // Set current year
-  document.getElementById("year").textContent = new Date().getFullYear();
-
-  // Set active link
-  document.addEventListener("DOMContentLoaded", function () {
-    const currentPath = window.location.pathname.split("/").pop();
-    document.querySelectorAll(".nav-link").forEach(link => {
-      const href = link.getAttribute("href");
-      if (href && href.includes(currentPath)) {
-        link.classList.add("active");
-        const parentCollapse = link.closest(".collapse");
-        if (parentCollapse) {
-          parentCollapse.classList.add("show");
-          const parentLink = parentCollapse.previousElementSibling;
-          if (parentLink) parentLink.classList.add("active");
-        }
-      }
-    });
-  });
-
-  // Logout
-  function logoutFunction() {
-    alert("Logging out...");
-    window.location.href = "logout.html";
-  }
-</script>
-
-</body>
-</html>

@@ -118,9 +118,7 @@
 
     <script src="config.js"></script>
 
-    <script>
-    
-
+<script>
   // Download PDF
   document.getElementById("downloadPdf").addEventListener("click", function () {
     const { jsPDF } = window.jspdf;
@@ -143,7 +141,7 @@
       html: "#PayableReport",
       startY: 20,
       theme: "grid",
-      headStyles: { fillColor: [220, 53, 69] }, // red header
+      headStyles: { fillColor: [220, 53, 69] },
     });
 
     // Prepared / Approved
@@ -167,14 +165,28 @@
     doc.save("Payables_Report.pdf");
   });
 
-  // Load Sidebar
-  fetch("sidebar.html")
-    .then((res) => res.text())
-    .then((html) => {
-      document.getElementById("sidebar-container").innerHTML = html;
-    });
+  // ✅ Wrap sidebar loading in async IIFE
+  (async () => {
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      $("#sidebar-container").html(sidebarHTML);
 
-  // Load Payable Report
+      // Load sidebar script AFTER sidebar is inserted
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js"; 
+      sidebarScript.onload = function () {
+        if (typeof initSidebar === "function") {
+          initSidebar(); 
+        }
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
+  })();
+
+  // ✅ Load Payable Report
   $(document).ready(function () {
     fetch(`${BASEURL}Reports/PayableReport`)
       .then((res) => res.json())
@@ -207,27 +219,17 @@
           `;
         });
 
-        // ✅ Add Final Payables row
         const netPayables = totalCredit - totalDebit;
-        // rows += `
-        //   <tr class="table-danger fw-bold">
-        //     <td></td>
-        //     <td class="text-end">Total Payables:</td>
-        //     <td></td>
-        //     <td>${netPayables.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-        //   </tr>
-        // `;
 
         $("#PayableReport tbody").html(rows);
 
-        // ✅ Initialize DataTable
         $("#PayableReport").DataTable({
           dom: "frtip",
           searching: false,
           paging: true,
           ordering: true,
           destroy: true,
-          order: [[3, "desc"]], // sort by Total Credit
+          order: [[3, "desc"]],
         });
       })
       .catch((err) => {
@@ -238,6 +240,7 @@
       });
   });
 </script>
+
 
   </body>
 </html>

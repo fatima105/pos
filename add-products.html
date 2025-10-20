@@ -160,6 +160,24 @@
 <!-- Local Select2 JS -->
 <script src="scripts/select2.min.js"></script>
 <script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      const sidebarContainer = document.getElementById("sidebar-container");
+      sidebarContainer.innerHTML = sidebarHTML;
+
+      // Load and initialize sidebar script
+      const script = document.createElement("script");
+      script.src = "scripts/scripts.js"; // should contain initSidebar()
+      script.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(script);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
+  });
  document.getElementById('retail_price').addEventListener('input', function () {
     // Remove everything except digits and a single decimal point
     this.value = this.value

@@ -112,8 +112,76 @@
 
     <script src="config.js"></script>
 
-    <script>
-document.getElementById("downloadPdf").addEventListener("click", function () {
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Load Sidebar
+  (async () => {
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      $("#sidebar-container").html(sidebarHTML);
+
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
+  })();
+
+  // Fetch Low Stock Products
+  fetch(`${BASEURL}Reports/lowstockproduct`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.report || data.report.length === 0) {
+        $("#lowStockTable tbody").html(
+          `<tr><td colspan="5">No low stock products found.</td></tr>`
+        );
+        return;
+      }
+
+      let rows = "";
+      data.report.forEach((p, i) => {
+        rows += `
+          <tr class="${p.lowStock ? "low-stock" : ""}">
+            <td>${i + 1}</td>
+            <td>${p.product_name}</td>
+            <td>${p.category || "N/A"}</td>
+            <td>${p.sub_category || "N/A"}</td>
+            <td>
+              <span class="badge bg-${p.lowStock ? "danger" : "success"}">
+                ${p.total_stock} stock
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+
+      $("#lowStockTable tbody").html(rows);
+
+      // Initialize DataTable
+      $("#lowStockTable").DataTable({
+        dom: "frtip",
+        searching: false,
+        paging: true,
+        ordering: true,
+        order: [[4, "asc"]],
+      });
+    })
+    .catch((err) => {
+      console.error("❌ Error loading products:", err);
+      $("#lowStockTable tbody").html(
+        `<tr><td colspan="5">Failed to load products</td></tr>`
+      );
+    });
+});
+
+// Download PDF
+document.getElementById("downloadPdf").addEventListener("click", async function () {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
@@ -132,97 +200,34 @@ document.getElementById("downloadPdf").addEventListener("click", function () {
   const reportWidth = doc.getTextWidth(reportTitle);
   doc.text(reportTitle, pageWidth - margin - reportWidth, 12);
 
-  // Add AutoTable with HTML table
+  // Add AutoTable
   doc.autoTable({
     html: "#lowStockTable",
     startY: 20,
     theme: "grid",
-    headStyles: { fillColor: [220, 53, 69] }, // Bootstrap red
+    headStyles: { fillColor: [220, 53, 69] },
   });
 
-// Add "Prepared By" / "Approved By" section
-const finalY = doc.lastAutoTable.finalY || 30; // last table Y position
-const lineWidth = 70;
-const spaceBetween = 50;
-const startX = margin;
+  const finalY = doc.lastAutoTable.finalY || 30;
+  const lineWidth = 70;
+  const spaceBetween = 50;
+  const startX = margin;
 
-doc.setFontSize(12);
+  doc.setFontSize(12);
+  doc.setFont(undefined, "bold");
+  doc.text("Prepared By:", startX, finalY + 25);
+  doc.setFont(undefined, "normal");
+  doc.line(startX, finalY + 32, startX + lineWidth, finalY + 32);
 
-// Prepared By
-doc.setFont(undefined, "bold");
-doc.text("Prepared By:", startX, finalY + 25); // label higher
-doc.setFont(undefined, "normal");
-doc.setLineWidth(0.5);
-doc.line(startX, finalY + 32, startX + lineWidth, finalY + 32); // line pushed down
+  const approvedX = startX + lineWidth + spaceBetween;
+  doc.setFont(undefined, "bold");
+  doc.text("Approved By:", approvedX, finalY + 25);
+  doc.setFont(undefined, "normal");
+  doc.line(approvedX, finalY + 32, approvedX + lineWidth, finalY + 32);
 
-// Approved By
-const approvedX = startX + lineWidth + spaceBetween;
-doc.setFont(undefined, "bold");
-doc.text("Approved By:", approvedX, finalY + 25); // label higher
-doc.setFont(undefined, "normal");
-doc.line(approvedX, finalY + 32, approvedX + lineWidth, finalY + 32); // line pushed down
-
-
-  // Optional: Add dotted lines or underline effect
-  // doc.setLineDash([1, 2]); // for dotted line
-
-  // Save PDF
   doc.save("Low_Stock_Report.pdf");
 });
-      // Load Sidebar
-      fetch("sidebar.html")
-        .then((res) => res.text())
-        .then((html) => {
-          document.getElementById("sidebar-container").innerHTML = html;
-        });
+</script>
 
-      $(document).ready(function () {
-        // Fetch Low Stock Products
-        fetch(`${BASEURL}Reports/lowstockproduct`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (!data.report || data.report.length === 0) {
-              $("#lowStockTable tbody").html(
-                `<tr><td colspan="5">No low stock products found.</td></tr>`
-              );
-              return;
-            }
-
-            let rows = "";
-            data.report.forEach((p, i) => {
-              rows += `
-                <tr class="${p.lowStock ? "low-stock" : ""}">
-                  <td>${i + 1}</td>
-                  <td>${p.product_name}</td>
-                  <td>${p.category || "N/A"}</td>
-                  <td>${p.sub_category || "N/A"}</td>
-                  <td>
-                    <span class="badge bg-${p.lowStock ? "danger" : "success"}">
-                      ${p.total_stock} stock
-                    </span>
-                  </td>
-                </tr>
-              `;
-            });
-
-            $("#lowStockTable tbody").html(rows);
-
-            // Initialize DataTable
-            $("#lowStockTable").DataTable({
-              dom: "frtip", // no buttons
-              searching: false,
-              paging: true,
-              ordering: true,
-              order: [[4, "asc"]], // sort by stock
-            });
-          })
-          .catch((err) => {
-            console.error("❌ Error loading products:", err);
-            $("#lowStockTable tbody").html(
-              `<tr><td colspan="5">Failed to load products</td></tr>`
-            );
-          });
-      });
-    </script>
   </body>
 </html>

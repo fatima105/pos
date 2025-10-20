@@ -3,11 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Electron Bootstrap Sidebar</title>
+    <title>Edit Profile</title>
 
-    <!-- Bootstrap CSS -->
-   <link href="scripts/bootstrap.min.css" rel="stylesheet" />
-    <!-- Custom CSS -->
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="scripts/style.css" />
   </head>
   <body>
@@ -25,85 +23,138 @@
                 <li class="breadcrumb-item">
                   <a href="index.html" class="text-primary text-decoration-none">Home</a>
                 </li>
-                <li
-                  class="breadcrumb-item active text-muted"
-                  aria-current="page"
-                >
+                <li class="breadcrumb-item active text-muted" aria-current="page">
                   My Profile
                 </li>
               </ol>
             </nav>
           </div>
 
-          <!-- Profile Edit Section -->
           <div class="d-flex justify-content-center align-items-center vh-100">
-            <div
-              class="card p-4 shadow-lg"
-              style="width: 50%; max-width: 500px"
-            >
+            <div class="card p-4 shadow-lg" style="width: 50%; max-width: 500px">
               <h3 class="text-center">Edit Profile</h3>
-              <form>
+
+              <!-- Inline Alert Placeholder -->
+              <div id="alertPlaceholder"></div>
+
+              <form id="profileForm">
                 <div class="mb-3">
-                  <label class="form-label">Full Name</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    value=""
-                  />
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Mobile</label>
-                  <input type="text" class="form-control" value="" />
+                  <label class="form-label">Name</label>
+                  <input type="text" id="name" class="form-control" required />
                 </div>
                 <div class="mb-3">
                   <label class="form-label">Email</label>
-                  <input
-                    type="email"
-                    class="form-control"
-                    value=""
-                    disabled
-                  />
+                  <input type="email" id="email" class="form-control" readonly disabled />
                 </div>
                 <div class="mb-3">
-                  <label class="form-label">Profile Pic</label>
-                  <input type="file" class="form-control" />
+                  <label class="form-label">Password</label>
+                  <input type="password" id="password" class="form-control" placeholder="Enter new password" required />
                 </div>
-                <button type="submit" class="btn btn-primary w-100">
-                  Submit
-                </button>
+                <div class="mb-3">
+                  <label class="form-label">Confirm Password</label>
+                  <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">Submit</button>
               </form>
             </div>
           </div>
         </div>
+
         <!-- Footer -->
         <div id="footer-container"></div>
       </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="scripts/bootstrap.bundle.min.js"></script>
-
+      <script src="config.js"></script>
     <script src="scripts/scripts.js"></script>
-
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        // Load Footer
-        fetch("scripts/footer.html")
-          .then((response) => response.text())
-          .then((data) => {
-            document.getElementById("footer-container").innerHTML = data;
-            document.getElementById("year").textContent =
-              new Date().getFullYear();
-          })
-          .catch((error) => console.error("Error loading footer:", error));
+      document.addEventListener("DOMContentLoaded", async function () {
+        const userId = localStorage.getItem("userId");
 
-        // Load Sidebar
-        fetch("sidebar.html")
-          .then((response) => response.text())
-          .then(
-            (html) =>
-              (document.getElementById("sidebar-container").innerHTML = html)
-          );
+        // Inline alert function
+        function showInlineAlert(message, type = "danger") {
+          const alertPlaceholder = document.getElementById("alertPlaceholder");
+          alertPlaceholder.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show mt-2" role="alert">
+              ${message}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          `;
+          setTimeout(() => { alertPlaceholder.innerHTML = ""; }, 4000);
+        }
+
+        // Load user data
+        async function loadUserData() {
+          try {
+            const res = await fetch(`${BASEURL}users/users/${userId}`);
+            if (!res.ok) throw new Error("Failed to fetch user data");
+            const user = await res.json();
+
+            // Fill form inputs
+            document.getElementById("name").value = user.name || "";
+            document.getElementById("email").value = user.email || "";
+            document.getElementById("password").value = "";
+            document.getElementById("confirmPassword").value = "";
+          } catch (err) {
+            console.error(err);
+            showInlineAlert("Error loading user data", "danger");
+          }
+        }
+
+        await loadUserData();
+
+        // Handle form submit
+        document.getElementById("profileForm").addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const name = document.getElementById("name").value.trim();
+          const password = document.getElementById("password").value.trim();
+          const confirmPassword = document.getElementById("confirmPassword").value.trim();
+
+          if (password !== confirmPassword) {
+            showInlineAlert("Passwords do not match!", "danger");
+            return;
+          }
+
+          // Send update request
+          try {
+            const res = await fetch(`${BASEURL}users/users/${userId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, password }),
+            });
+
+            const result = await res.json();
+            if (res.ok) {
+              showInlineAlert("Profile updated successfully!", "success");
+            } else {
+              showInlineAlert(result.message || "Failed to update profile", "danger");
+            }
+          } catch (err) {
+            console.error(err);
+            showInlineAlert("Error updating profile", "danger");
+          }
+        });
+
+        // Load sidebar
+        try {
+          const sidebarHTML = await fetch("sidebar.html").then(r => r.text());
+          document.getElementById("sidebar-container").innerHTML = sidebarHTML;
+          const sidebarScript = document.createElement("script");
+          sidebarScript.src = "scripts/scripts.js";
+          sidebarScript.onload = () => { if (typeof initSidebar === "function") initSidebar(); };
+          document.body.appendChild(sidebarScript);
+        } catch (err) { console.error("Error loading sidebar:", err); }
+
+        // Load footer
+        try {
+          const footerHTML = await fetch("scripts/footer.html").then(r => r.text());
+          document.getElementById("footer-container").innerHTML = footerHTML;
+          document.getElementById("year").textContent = new Date().getFullYear();
+        } catch (err) { console.error("Error loading footer:", err); }
+
       });
     </script>
   </body>

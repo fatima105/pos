@@ -375,7 +375,7 @@ localStorage.setItem('globalAlertType', 'error');
         }
         
         // Auto-format CNIC input
-        document.getElementById('cnic').addEventListener('input', function(e) {
+        document.getElementById('cnic').addEventListener('input',async  function(e) {
             let value = e.target.value.replace(/\D/g, '');
             if (value.length >= 5) {
                 value = value.substring(0, 5) + '-' + value.substring(5);

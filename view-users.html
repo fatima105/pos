@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Users</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="scripts/style.css" />
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- Content Area -->
+    <div class="content-container">
+      <div class="container-fluid bg-light py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">View Users</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item">
+                <a href="index.html" class="text-primary text-decoration-none">Home</a>
+              </li>
+              <li class="breadcrumb-item active text-muted" aria-current="page">View</li>
+            </ol>
+          </nav>
+        </div>
+
+        <!-- Users Table Section -->
+        <div class="d-flex justify-content-center mt-4">
+          <div class="card p-4 shadow-lg" style="width: 90%; max-width: 1000px">
+            <h3 class="text-center mb-4">All Users</h3>
+
+            <!-- Alert placeholder -->
+            <div id="alertPlaceholder"></div>
+
+            <!-- Users Table -->
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover align-middle text-center">
+                <thead class="table-dark">
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                        <th>License</th>
+                    <th>Action</th> <!-- ✅ New Column -->
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <tr>
+                    <td colspan="6" class="text-muted">Loading users...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div id="footer-container"></div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/scripts.js"></script>
+  <script src="config.js"></script>
+
+  <script>
+    // ✅ Show inline alert
+    function showInlineAlert(message, type = "info") {
+      const alertPlaceholder = document.getElementById("alertPlaceholder");
+      if (!alertPlaceholder) return;
+
+      const alertHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      `;
+      alertPlaceholder.innerHTML = alertHTML;
+      setTimeout(() => {
+        const alert = alertPlaceholder.querySelector(".alert");
+        if (alert) alert.classList.remove("show");
+      }, 5000);
+    }
+
+    // ✅ Load footer
+    async function loadFooter() {
+      const footerContainer = document.getElementById("footer-container");
+      if (!footerContainer) return;
+
+      try {
+        const res = await fetch("footer.html");
+        if (!res.ok) throw new Error("Footer file not found");
+        const html = await res.text();
+        footerContainer.innerHTML = html;
+        const yearEl = document.getElementById("year");
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+      } catch (err) {
+        console.error("Error loading footer:", err);
+      }
+    }
+
+    // ✅ Load sidebar
+    async function loadSidebar() {
+      const sidebarContainer = document.getElementById("sidebar-container");
+      if (!sidebarContainer) return;
+
+      try {
+        const res = await fetch("sidebar.html");
+        if (!res.ok) throw new Error("Sidebar file not found");
+        const html = await res.text();
+        sidebarContainer.innerHTML = html;
+
+        const sidebarScript = document.createElement("script");
+        sidebarScript.src = "scripts/scripts.js";
+        sidebarScript.onload = () => {
+          if (typeof initSidebar === "function") initSidebar();
+        };
+        document.body.appendChild(sidebarScript);
+      } catch (err) {
+        console.error("Error loading sidebar:", err);
+      }
+    }
+
+    // ✅ Load Users (with Edit button)
+async function loadUsers() {
+  const tableBody = document.getElementById("usersTableBody");
+  if (!tableBody) return;
+
+  try {
+    const res = await fetch(`${BASEURL}users/users`);
+    if (!res.ok) throw new Error("Failed to fetch users");
+
+    const users = await res.json();
+
+    if (users.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="6" class="text-muted">No users found</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = users
+      .map(user => {
+        // 🧠 Hide Edit button for admin & superadmin
+        const showEditButton =
+          user.role.toLowerCase() !== "admin" &&
+          user.role.toLowerCase() !== "superadmin";
+
+        return `
+          <tr>
+            <td>${user.id}</td>
+            <td>${user.name}</td>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+            <td>
+              <span class="badge bg-${user.status === "active" ? "success" : "secondary"}">
+                ${user.status}
+              </span>
+            </td>
+               <td>
+              <span class="badge bg-${user.license === "Added" ? "info" : "secondary"}">
+                ${user.license || "Not Added"}
+              </span>
+            </td>
+            <td>
+              ${
+                showEditButton
+                  ? `<button class="btn btn-sm btn-primary" onclick="editUser(${user.id})">Edit</button>`
+                  : `<span class="text-muted">—</span>`
+              }
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+  } catch (err) {
+    console.error("Error loading users:", err);
+    showInlineAlert("Error loading users", "danger");
+    tableBody.innerHTML = `<tr><td colspan="6" class="text-danger">Error loading users</td></tr>`;
+  }
+}
+
+
+    // ✅ Edit User Handler
+    function editUser(userId) {
+      // Option 1: Redirect to edit page
+      window.location.href = `edit-user.html?id=${userId}`;
+
+      // Option 2 (future): Open modal for inline edit
+      // openEditModal(userId);
+    }
+
+    // ✅ Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+      loadFooter();
+      loadSidebar();
+      loadUsers();
+    });
+  </script>
+
+</body>
+</html>

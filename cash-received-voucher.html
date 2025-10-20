@@ -179,12 +179,22 @@
           });
 
         // Load Sidebar
-        fetch("sidebar.html")
-          .then(res => res.text())
-          .then(html => {
-            document.getElementById("sidebar-container").innerHTML = html;
-          });
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+$("#sidebar-container").html(sidebarHTML);
 
+
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
         // Initialize DataTable
         window.CashReceived = $("#CashReceived").DataTable({
           dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',

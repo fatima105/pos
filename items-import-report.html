@@ -143,102 +143,115 @@
     <script src="scripts/buttons.print.min.js"></script>
     <script src="config.js"></script>
 
-    <script>
-      function showAlert(message, type = 'danger') {
-  const alertPlaceholder = document.getElementById('alertPlaceholder');
-  if (!alertPlaceholder) return;
+<script>
+  function showAlert(message, type = 'danger') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    if (!alertPlaceholder) return;
 
-  alertPlaceholder.innerHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-      ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  `;
+    alertPlaceholder.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
 
-  alertPlaceholder.scrollIntoView({ behavior: 'smooth' });
+    alertPlaceholder.scrollIntoView({ behavior: 'smooth' });
 
-  // Auto dismiss after 5s
-  setTimeout(() => {
-    const alertDiv = alertPlaceholder.querySelector('.alert');
-    if (alertDiv) {
-      alertDiv.classList.remove('show');
-      alertDiv.classList.add('fade');
-      setTimeout(() => alertDiv.remove(), 300);
-    }
-  }, 5000);
-}
-
-      // Load sidebar
-      fetch("sidebar.html")
-        .then((res) => res.text())
-        .then((data) => {
-          $("#sidebar-container").html(data);
-        });
-
-      // Load suppliers dynamically
-      function loadSuppliers() {
-        fetch(`${BASEURL}Supplier`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.Supplier?.length > 0) {
-              const options = data.Supplier.map(
-                (s) =>
-                  `<option value="${s.id}">${s.name} (${s.code})</option>`
-              ).join("");
-              $("#supplier").html(
-                '<option value="">--Select Supplier--</option>' + options
-              );
-            } else {
-              $("#supplier").html('<option value="">No Supplier found</option>');
-            }
-          })
-          .catch((err) =>
-            console.error("Error loading suppliers:", err)
-          );
+    // Auto dismiss after 5s
+    setTimeout(() => {
+      const alertDiv = alertPlaceholder.querySelector('.alert');
+      if (alertDiv) {
+        alertDiv.classList.remove('show');
+        alertDiv.classList.add('fade');
+        setTimeout(() => alertDiv.remove(), 300);
       }
+    }, 5000);
+  }
 
-      $(document).ready(function () {        // Initialize select2 for better dropdown
-        $("#supplier").select2({
-          placeholder: "--Select Supplier--",
-          width: "100%",
-        });
+  // ✅ Function to load sidebar and initialize
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const sidebarResponse = await fetch("sidebar.html");
+    const sidebarHTML = await sidebarResponse.text();
+    document.getElementById("sidebar-container").innerHTML = sidebarHTML;
 
-        // Load suppliers when page loads
-        loadSuppliers();
+    // Load sidebar script dynamically
+    const sidebarScript = document.createElement("script");
+    sidebarScript.src = "scripts/scripts.js";
+    sidebarScript.onload = () => {
+      if (typeof initSidebar === "function") initSidebar();
+    };
+    document.body.appendChild(sidebarScript);
+  } catch (err) {
+    console.error("Error loading sidebar:", err);
+  }
 
-        // Handle form submit via AJAX
-// Handle form submit via AJAX
-$("#importForm").on("submit", function (e) {
-  e.preventDefault();
-  const formData = new FormData(this);
 
-  fetch(`${BASEURL}import/import`, {
-    method: "POST",
-    body: formData,
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Network response was not ok");
-      return res.blob();
-    })
-  .then((blob) => {
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.style.display = "none";
-  a.href = url;
-  a.download = "Items_Conflict_Report.pdf"; // forces download
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
-})
-.catch((err) => {
-      console.error("Upload error:", err);
-      showAlert("Something went wrong while uploading.", "danger");
+  // ✅ Load suppliers dynamically
+  function loadSuppliers() {
+    fetch(`${BASEURL}Supplier`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.Supplier?.length > 0) {
+          const options = data.Supplier.map(
+            (s) => `<option value="${s.id}">${s.name} (${s.code})</option>`
+          ).join("");
+          $("#supplier").html(
+            '<option value="">--Select Supplier--</option>' + options
+          );
+        } else {
+          $("#supplier").html('<option value="">No Supplier found</option>');
+        }
+      })
+      .catch((err) => console.error("Error loading suppliers:", err));
+  }
+
+  // ✅ Run when page ready
+  $(document).ready(function () {
+    // Load Sidebar first
+    loadSidebar();
+
+    // Initialize select2 for better dropdown
+    $("#supplier").select2({
+      placeholder: "--Select Supplier--",
+      width: "100%",
     });
-});
 
-});
+    // Load suppliers when page loads
+    loadSuppliers();
 
-    </script>
+    // ✅ Handle form submit via AJAX
+    $("#importForm").on("submit", function (e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      fetch(`${BASEURL}import/import`, {
+        method: "POST",
+        body: formData,
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Network response was not ok");
+          return res.blob();
+        })
+        .then((blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.style.display = "none";
+          a.href = url;
+          a.download = "Items_Conflict_Report.pdf"; // forces download
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        })
+        .catch((err) => {
+          console.error("Upload error:", err);
+          showAlert("Something went wrong while uploading.", "danger");
+        });
+    });
+  });
+});
+</script>
+
   </body>
 </html>

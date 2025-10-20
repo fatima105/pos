@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assign Modules to User</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+  <link href="scripts/style.css" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="main-container">
+    <!-- ✅ Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <!-- ✅ Content Area -->
+    <div class="content-container">
+      <div class="container-fluid bg-light py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">Assign Modules to User</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+              <li class="breadcrumb-item">
+                <a href="index.html" class="text-primary text-decoration-none">Home</a>
+              </li>
+              <li class="breadcrumb-item active text-muted" aria-current="page">
+                Assign Modules
+              </li>
+            </ol>
+          </nav>
+        </div>
+
+        <!-- ✅ Card Section -->
+        <div class="d-flex justify-content-center mt-4">
+          <div class="card p-4 shadow-lg" style="width: 90%; max-width: 1000px">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h4 class="mb-0">Userd d  Module Access</h4>
+              <button id="saveChangesBtn" class="btn btn-primary">💾 Save Changes</button>
+            </div>
+
+            <!-- Alert Placeholder -->
+            <div id="alertPlaceholder"></div>
+
+            <!-- ✅ Modules Table -->
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover align-middle text-center">
+                <thead class="table-dark">
+                  <tr>
+                    <th>ID</th>
+                    <th>Module Name</th>
+                    <th>Description</th>
+                    <th>Assigned</th>
+                  </tr>
+                </thead>
+                <tbody id="modulesTableBody">
+                  <tr>
+                    <td colspan="4" class="text-muted">Loading modules...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ Footer -->
+      <div id="footer-container"></div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="scripts/bootstrap.bundle.min.js"></script>
+  <script src="scripts/scripts.js"></script>
+  <script src="config.js"></script>
+
+  <script>
+      const urlParams = new URLSearchParams(window.location.search);
+
+  // Get the 'id' value from ?id=123
+  const userId = urlParams.get('id');
+
+
+    // ✅ Load sidebar dynamically
+    async function loadSidebar() {
+      const sidebarContainer = document.getElementById("sidebar-container");
+      if (!sidebarContainer) return;
+      try {
+        const res = await fetch("sidebar.html");
+        const html = await res.text();
+        sidebarContainer.innerHTML = html;
+
+        const sidebarScript = document.createElement("script");
+        sidebarScript.src = "scripts/scripts.js";
+        document.body.appendChild(sidebarScript);
+      } catch (err) {
+        console.error("Sidebar load error:", err);
+      }
+    }
+
+    // ✅ Load footer dynamically
+    async function loadFooter() {
+      const footerContainer = document.getElementById("footer-container");
+      if (!footerContainer) return;
+      try {
+        const res = await fetch("footer.html");
+        const html = await res.text();
+        footerContainer.innerHTML = html;
+        const yearEl = document.getElementById("year");
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+      } catch (err) {
+        console.error("Footer load error:", err);
+      }
+    }
+
+    // ✅ Show inline Bootstrap alert
+    function showAlert(message, type = "info") {
+      const alertPlaceholder = document.getElementById("alertPlaceholder");
+      alertPlaceholder.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+      setTimeout(() => {
+        const alert = document.querySelector(".alert");
+        if (alert) alert.classList.remove("show");
+      }, 4000);
+    }
+
+    // ✅ Load all modules and assigned modules
+async function loadModules() {
+  const tableBody = document.getElementById("modulesTableBody");
+
+  try {
+    // Get all modules first
+    const modulesRes = await fetch(`${BASEURL}modules`);
+    if (!modulesRes.ok) throw new Error("Failed to fetch modules");
+    const modules = await modulesRes.json();
+
+    // Then try to get user's assigned modules
+    let assignedIds = [];
+    let userData;
+
+    try {
+      const userRes = await fetch(`${BASEURL}assign/user/${userId}`);
+      if (userRes.ok) {
+        userData = await userRes.json();
+        if (userData.message === "No modules found for this user") {
+          console.warn("No assigned modules for this user — showing all unchecked.");
+        } else if (Array.isArray(userData.modules) && userData.modules.length > 0) {
+          assignedIds = userData.modules.map(m => m.id);
+        }
+      } else {
+        console.warn("User module fetch failed (404 or other) — loading all unchecked.");
+      }
+    } catch (innerErr) {
+      console.warn("Error fetching user modules:", innerErr);
+    }
+
+    // ✅ Build table rows dynamically (always show all modules)
+    tableBody.innerHTML = modules.map(mod => `
+      <tr>
+        <td>${mod.id}</td>
+        <td>${mod.name}</td>
+        <td>${mod.description}</td>
+        <td>
+          <input type="checkbox" class="form-check-input module-checkbox"
+            data-id="${mod.id}" ${assignedIds.includes(mod.id) ? "checked" : ""}>
+        </td>
+      </tr>
+    `).join("");
+
+  } catch (err) {
+    console.error("Error loading modules:", err);
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-danger">Error loading modules</td></tr>`;
+    showAlert("Error loading modules", "danger");
+  }
+}
+
+    // ✅ Save user’s assigned modules
+    async function saveChanges() {
+      try {
+        const checkboxes = document.querySelectorAll(".module-checkbox");
+        const selectedIds = Array.from(checkboxes)
+          .filter(cb => cb.checked)
+          .map(cb => parseInt(cb.dataset.id));
+
+        const payload = { user_id: userId, module_ids:selectedIds };
+
+        const res = await fetch(`${BASEURL}assign`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Save failed");
+        showAlert("Modules updated successfully!", "success");
+
+      } catch (err) {
+        console.error(err);
+        showAlert("Error saving modules", "danger");
+      }
+    }
+
+    // ✅ Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+      loadSidebar();
+      loadFooter();
+      loadModules();
+      document.getElementById("saveChangesBtn").addEventListener("click", saveChanges);
+    });
+  </script>
+</body>
+</html>

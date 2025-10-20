@@ -1,5 +1,8 @@
 // server.js
 const express = require('express');
+// ✅ Initialize DB connection
+require('./db.js');
+
 const cors = require('cors');
 const modulesRoutes = require("./routes/modulesRoutes");
 const assignRoutes = require("./routes/assignRoutes");
@@ -62,5 +65,6 @@ app.use("/api/modules", modulesRoutes);
 app.use("/api/assign", assignRoutes);
 const PORT = 8000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 SERVER_READY: Server running on http://localhost:${PORT}`);
 });
+

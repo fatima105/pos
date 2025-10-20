@@ -147,13 +147,25 @@
         $("#year").text(new Date().getFullYear());
       });
 
-    // Load sidebar
-    fetch("sidebar.html")
-      .then(res => res.text())
-      .then(data => {
-        $("#sidebar-container").html(data);
-      });
+  document.addEventListener("DOMContentLoaded", async function () {
+    //  Load sidebar
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+ $("#sidebar-container").html(sidebarHTML);
 
+
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
+  });
     // Restrict date to today or before
     const datePickerId = document.getElementById('date');
     datePickerId.max = new Date().toISOString().split("T")[0];

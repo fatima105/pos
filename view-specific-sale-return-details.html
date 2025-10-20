@@ -107,7 +107,7 @@
     <script src="config.js"></script>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
+      document.addEventListener("DOMContentLoaded", async function () {
         // Load Footer
         fetch("scripts/footer.html")
           .then((response) => response.text())
@@ -118,11 +118,21 @@
           .catch((error) => console.error("Error loading footer:", error));
 
         // Load Sidebar
-        fetch("sidebar.html")
-          .then((response) => response.text())
-          .then((html) => {
-            document.getElementById("sidebar-container").innerHTML = html;
-          });
+     try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+$("#sidebar-container").html(sidebarHTML);
+
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
 
         // Initialize load of sale return details
         loadSaleReturnDetails();

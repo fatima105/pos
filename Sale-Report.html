@@ -83,11 +83,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-$(document).ready(function () {
-  fetch("sidebar.html")
-    .then(res => res.text())
-    .then(html => $("#sidebar-container").html(html));
+$(document).ready(async function () {
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+$("#sidebar-container").html(sidebarHTML);
 
+
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
   $("#getReportBtn").on("click", async function () {
     const startDate = $("#fromDate").val();
     const endDate = $("#toDate").val();

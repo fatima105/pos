@@ -100,161 +100,163 @@
     <script src="config.js"></script>
 
 <script>
-  function showAlert(message, type = "danger") {
-    const alertHtml = `
-      <div class="alert alert-${type} alert-dismissible fade show d-inline-block" role="alert">
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    `;
-    $("#alertContainer").html(alertHtml);
+document.addEventListener("DOMContentLoaded", function () {
 
-    setTimeout(() => {
-      $("#alertContainer .alert").alert("close");
-    }, 3000);
-  }
+  // ✅ Load Sidebar properly
+  (async () => {
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      $("#sidebar-container").html(sidebarHTML); // ✅ fixed selector
 
-  // Set max date
-  const today = new Date().toISOString().split("T")[0];
-  document.getElementById("fromDate").setAttribute("max", today);
-  document.getElementById("toDate").setAttribute("max", today);
+      // ✅ Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
+  })();
 
-  // Load Sidebar
-  fetch("sidebar.html")
-    .then((response) => response.text())
-    .then((html) => {
-      document.getElementById("sidebar-container").innerHTML = html;
-    });
+  // ✅ Your existing jQuery ready code
+  $(".select2").select2({ placeholder: "Select Supplier", allowClear: true });
+  loadSuppliers();
 
-  $(document).ready(function () {
-    $(".select2").select2({ placeholder: "Select Supplier", allowClear: true });
-    loadSuppliers();
+  $("#getReportBtn").on("click", function () {
+    const supplierId = $("#supplier_id").val();
+    const fromDate = $("#fromDate").val();
+    const toDate = $("#toDate").val();
 
-    $("#getReportBtn").on("click", function () {
-      const supplierId = $("#supplier_id").val();
-      const fromDate = $("#fromDate").val();
-      const toDate = $("#toDate").val();
+    if (!supplierId || !fromDate || !toDate) {
+      showAlert("Please fill all required fields.");
+      return;
+    }
 
-      if (!supplierId || !fromDate || !toDate) {
-        showAlert("Please fill all required fields.");
-        return;
-      }
-
-      fetch(`${BASEURL}Reports`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          supplier_id: supplierId,
-          start_date: fromDate,
-          end_date: toDate,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
-            showAlert(data.error, "warning");
-            $("#reportContainer").html(
-              "<p class='text-center text-muted mt-3'>No records found.</p>"
-            );
-          } else if (Array.isArray(data.ledger) && data.ledger.length > 0) {
-            // ✅ Pass opening_balance properly
-            generateTable(data.ledger, parseFloat(data.opening_balance || 0));
-          } else {
-            showAlert(
-              "No ledger data found for the selected supplier and date range.",
-              "warning"
-            );
-            $("#reportContainer").html(
-              "<p class='text-center text-muted mt-3'>No records found.</p>"
-            );
-          }
-        })
-        .catch((err) => {
-          console.error("Error:", err);
-          showAlert("Failed to load report data.");
-          $("#reportContainer").html(
-            "<p class='text-center text-danger mt-3'>Error loading data.</p>"
-          );
-        });
-    });
-  });
-
-  function loadSuppliers() {
-    fetch(`${BASEURL}Supplier`)
+    fetch(`${BASEURL}Reports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        supplier_id: supplierId,
+        start_date: fromDate,
+        end_date: toDate,
+      }),
+    })
       .then((res) => res.json())
       .then((data) => {
-        const select = $("#supplier_id");
-        select.empty();
-        if (data.Supplier?.length > 0) {
-          select.append(`<option value="">-- Select Supplier --</option>`);
-          data.Supplier.forEach((s) => {
-            select.append(
-              `<option value="${s.id}">${s.name} (${s.code})</option>`
-            );
-          });
+        if (data.error) {
+          showAlert(data.error, "warning");
+          $("#reportContainer").html(
+            "<p class='text-center text-muted mt-3'>No records found.</p>"
+          );
+        } else if (Array.isArray(data.ledger) && data.ledger.length > 0) {
+          generateTable(data.ledger, parseFloat(data.opening_balance || 0));
         } else {
-          select.append("<option>No supplier found</option>");
+          showAlert(
+            "No ledger data found for the selected supplier and date range.",
+            "warning"
+          );
+          $("#reportContainer").html(
+            "<p class='text-center text-muted mt-3'>No records found.</p>"
+          );
         }
       })
       .catch((err) => {
-        console.error("Error loading suppliers:", err);
-        $("#supplier_id").append("<option>Error loading suppliers</option>");
+        console.error("Error:", err);
+        showAlert("Failed to load report data.");
+        $("#reportContainer").html(
+          "<p class='text-center text-danger mt-3'>Error loading data.</p>"
+        );
       });
-  }
+  });
+});
 
-  function generateTable(entries, openingBalance) {
-    let balance = parseFloat(openingBalance);
+// ✅ Helper functions
+function showAlert(message, type = "danger") {
+  const alertHtml = `
+    <div class="alert alert-${type} alert-dismissible fade show d-inline-block" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  $("#alertContainer").html(alertHtml);
+  setTimeout(() => $("#alertContainer .alert").alert("close"), 3000);
+}
 
-    // Opening balance row
-    let rows = `
+function loadSuppliers() {
+  fetch(`${BASEURL}Supplier`)
+    .then((res) => res.json())
+    .then((data) => {
+      const select = $("#supplier_id");
+      select.empty();
+      if (data.Supplier?.length > 0) {
+        select.append(`<option value="">-- Select Supplier --</option>`);
+        data.Supplier.forEach((s) => {
+          select.append(`<option value="${s.id}">${s.name} (${s.code})</option>`);
+        });
+      } else {
+        select.append("<option>No supplier found</option>");
+      }
+    })
+    .catch((err) => {
+      console.error("Error loading suppliers:", err);
+      $("#supplier_id").append("<option>Error loading suppliers</option>");
+    });
+}
+
+function generateTable(entries, openingBalance) {
+  let balance = parseFloat(openingBalance);
+  let rows = `
+    <tr>
+      <td colspan="5" class="text-end"><strong>Opening Balance</strong></td>
+      <td>${balance.toFixed(2)}</td>
+    </tr>
+  `;
+
+  entries.forEach((entry, index) => {
+    const dr = parseFloat(entry.debit || 0);
+    const cr = parseFloat(entry.credit || 0);
+    balance += cr - dr;
+    rows += `
       <tr>
-        <td colspan="5" class="text-end"><strong>Opening Balance</strong></td>
+        <td>${index + 1}</td>
+        <td>${entry.date || ""}</td>
+        <td>${entry.narration || ""}</td>
+        <td>${dr.toFixed(2)}</td>
+        <td>${cr.toFixed(2)}</td>
         <td>${balance.toFixed(2)}</td>
       </tr>
     `;
+  });
 
-    entries.forEach((entry, index) => {
-      const dr = parseFloat(entry.debit || 0);
-      const cr = parseFloat(entry.credit || 0);
-      balance += cr - dr;
-
-      rows += `
+  const tableHtml = `
+    <table id="reportTable" class="table table-bordered table-striped mt-4">
+      <thead class="table-dark">
         <tr>
-          <td>${index + 1}</td>
-          <td>${entry.date || ""}</td>
-          <td>${entry.narration || ""}</td>
-          <td>${dr.toFixed(2)}</td>
-          <td>${cr.toFixed(2)}</td>
-          <td>${balance.toFixed(2)}</td>
+          <th>Sr.</th>
+          <th>Date</th>
+          <th>Narration</th>
+          <th>Dr.</th>
+          <th>Cr.</th>
+          <th>Balance</th>
         </tr>
-      `;
-    });
+      </thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr>
+          <th colspan="5" class="text-end">Closing Balance:</th>
+          <th>${balance.toFixed(2)}</th>
+        </tr>
+      </tfoot>
+    </table>
+  `;
 
-    const tableHtml = `
-      <table id="reportTable" class="table table-bordered table-striped mt-4">
-        <thead class="table-dark">
-          <tr>
-            <th>Sr.</th>
-            <th>Date</th>
-            <th>Narration</th>
-            <th>Dr.</th>
-            <th>Cr.</th>
-            <th>Balance</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-        <tfoot>
-          <tr>
-            <th colspan="5" class="text-end">Closing Balance:</th>
-            <th>${balance.toFixed(2)}</th>
-          </tr>
-        </tfoot>
-      </table>
-    `;
-
-    $("#reportContainer").html(tableHtml);
-  }
+  $("#reportContainer").html(tableHtml);
+}
 </script>
+
 
 
 

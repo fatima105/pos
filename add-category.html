@@ -101,81 +101,81 @@
   </div>
 </div>
 
-   
-    <!-- Bootstrap JS -->
-    <script src="scripts/bootstrap.bundle.min.js"></script>
-   
-    <script src="scripts/scripts.js"></script>
- <script src="config.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-          // Load Footer
-          fetch("scripts/footer.html")
-            .then((response) => response.text())
-            .then((data) => {
-              document.getElementById("footer-container").innerHTML = data;
-              document.getElementById("year").textContent =
-                new Date().getFullYear();
-            })
-            .catch((error) => console.error("Error loading footer:", error));
-      
-          // Load Sidebar
-          fetch("sidebar.html")
-            .then((response) => response.text())
-            .then(
-              (html) =>
-                (document.getElementById("sidebar-container").innerHTML = html)
-            );
-        });
-      
-        // Form submission logic
-        const CategoryAdd = document.getElementById("CategoryAdd");
-      
-        CategoryAdd.addEventListener("submit", (e) => {
-          e.preventDefault();
-      
-          const name = document.getElementById("name").value.trim();
-          const description = document.getElementById("description").value.trim();
-          const status = document.getElementById("status").value;
-      
-          if (name === "" || status === "") {
-            const errorModal = new bootstrap.Modal(document.getElementById('ErrorModal'));
-            errorModal.show();
-          } else {
-            const apiUrl = `${BASEURL}Category`;
-      
-            fetch(apiUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ name, status,description })
-            })
-              .then((res) => res.json())
-              .then((data) => {
-                if (data.id) {
-            
-localStorage.setItem('globalAlertMessage',"Category added successfully.");
-localStorage.setItem('globalAlertType', 'success');
-                  // Optionally clear form fields
-                  document.getElementById("name").value = "";
-                  document.getElementById("status").value = "Active";
-                  window.location.href = "Categories.html"; // change to your target page
-           
-                } else {
-                    localStorage.setItem('globalAlertMessage',"Error adding Category.");
-localStorage.setItem('globalAlertType', 'danger');
-                }
-              })
-              .catch((err) => {
-                console.error("Error:", err);
-                localStorage.setItem('globalAlertMessage',"Failed to submit data");
-localStorage.setItem('globalAlertType', 'danger');
-           
-              });
-          }
-        });
-      </script>
-      
+<!-- Bootstrap JS -->
+<script src="scripts/bootstrap.bundle.min.js"></script>
+
+<script src="config.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+  try {
+    // Load Footer
+    const footerResponse = await fetch("scripts/footer.html");
+    const footerHTML = await footerResponse.text();
+    document.getElementById("footer-container").innerHTML = footerHTML;
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Load Sidebar
+    const sidebarResponse = await fetch("sidebar.html");
+    const sidebarHTML = await sidebarResponse.text();
+    document.getElementById("sidebar-container").innerHTML = sidebarHTML;
+
+    // Load sidebar script dynamically
+    const sidebarScript = document.createElement("script");
+    sidebarScript.src = "scripts/scripts.js";
+    sidebarScript.onload = () => {
+      if (typeof initSidebar === "function") initSidebar();
+    };
+    document.body.appendChild(sidebarScript);
+
+  } catch (err) {
+    console.error("Error loading footer or sidebar:", err);
+  }
+
+  // ✅ Form submission logic
+  const CategoryAdd = document.getElementById("CategoryAdd");
+  if (CategoryAdd) {
+    CategoryAdd.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const description = document.getElementById("description").value.trim();
+      const status = document.getElementById("status").value;
+
+      if (!name || !status) {
+        const errorModal = new bootstrap.Modal(document.getElementById('ErrorModal'));
+        errorModal.show();
+        return;
+      }
+
+      const apiUrl = `${BASEURL}Category`;
+
+      fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, status, description })
+      })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.id) {
+          localStorage.setItem("globalAlertMessage", "Category added successfully.");
+          localStorage.setItem("globalAlertType", "success");
+          document.getElementById("name").value = "";
+          document.getElementById("status").value = "Active";
+          window.location.href = "Categories.html";
+        } else {
+          localStorage.setItem("globalAlertMessage", "Error adding Category.");
+          localStorage.setItem("globalAlertType", "danger");
+        }
+      })
+      .catch((err) => {
+        console.error("Error:", err);
+        localStorage.setItem("globalAlertMessage", "Failed to submit data");
+        localStorage.setItem("globalAlertType", "danger");
+      });
+    });
+  }
+});
+</script>
+
   </body>
 </html>

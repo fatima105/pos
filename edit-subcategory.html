@@ -81,7 +81,7 @@
   <script src="scripts/scripts.js"></script>
    <script src="config.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", async function () {
       // Load Footer
       fetch("scripts/footer.html")
         .then((response) => response.text())
@@ -92,11 +92,24 @@
         .catch((error) => console.error("Error loading footer:", error));
 
       // Load Sidebar
-      fetch("sidebar.html")
-        .then((response) => response.text())
-        .then((html) => {
-          document.getElementById("sidebar-container").innerHTML = html;
-        });
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      const sidebarContainer = document.getElementById("sidebar-container");
+      sidebarContainer.innerHTML = sidebarHTML;
+
+      // Load sidebar script AFTER sidebar is inserted
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js"; // Ensure initSidebar() exists there
+      sidebarScript.onload = function () {
+        if (typeof initSidebar === "function") {
+          initSidebar(); // Initialize sidebar (user info, links, etc.)
+        }
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
     });
 
     // Get query param

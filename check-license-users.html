@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>License Information</title>
+
+    <link href="scripts/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="scripts/style.css" />
+  </head>
+  <body>
+    <div class="main-container">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Content Area -->
+      <div class="content-container">
+        <div class="container-fluid bg-light py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">License Information</h2>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-primary text-decoration-none">Home</a>
+                </li>
+                <li class="breadcrumb-item active text-muted" aria-current="page">
+                  License
+                </li>
+              </ol>
+            </nav>
+          </div>
+
+          <div class="d-flex justify-content-center align-items-center vh-100">
+            <div id="licenseContainer" class="card p-4 shadow-lg text-center" style="width: 50%; max-width: 500px;">
+              <div class="spinner-border text-primary" role="status" id="loadingSpinner">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div id="footer-container"></div>
+      </div>
+    </div>
+
+    <script src="scripts/bootstrap.bundle.min.js"></script>
+    <script src="config.js"></script>
+    <script src="scripts/scripts.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        const userId = localStorage.getItem("userId");
+        const licenseContainer = document.getElementById("licenseContainer");
+        const spinner = document.getElementById("loadingSpinner");
+
+        // Inline Alert
+        function showInlineAlert(message, type = "info") {
+          licenseContainer.innerHTML = `
+            <div class="alert alert-${type} mt-3" role="alert">
+              ${message}
+            </div>
+          `;
+        }
+
+        async function loadLicense() {
+          if (!userId) {
+            showInlineAlert("User not found in session.", "danger");
+            return;
+          }
+
+          try {
+            const response = await fetch(`${BASEURL}users/license/${userId}`);
+            const result = await response.json();
+            spinner.style.display = "none";
+
+            if (!result || result.error || !result.issue_date) {
+              showInlineAlert("No license found for this user.", "warning");
+              return;
+            }
+
+            licenseContainer.innerHTML = `
+              <h4 class="text-primary mb-3">License Details</h4>
+              <div class="card-body text-start">
+               
+                <p><strong>User ID:</strong> ${result.user_id}</p>
+                <p><strong>Issue Date:</strong> ${result.issue_date}</p>
+                <p><strong>Expiry Date:</strong> ${result.expiry_date}</p>
+              </div>
+              <div class="mt-3">
+                <a href="license-upload.html" class="btn btn-outline-primary btn-sm">Update License</a>
+              </div>
+            `;
+          } catch (error) {
+            console.error("Error loading license:", error);
+            showInlineAlert("Failed to load license data.", "danger");
+          }
+        }
+
+        await loadLicense();
+
+        // Load sidebar dynamically
+        try {
+          const sidebarHTML = await fetch("sidebar.html").then((res) => res.text());
+          document.getElementById("sidebar-container").innerHTML = sidebarHTML;
+          const sidebarScript = document.createElement("script");
+          sidebarScript.src = "scripts/scripts.js";
+          sidebarScript.onload = () => {
+            if (typeof initSidebar === "function") initSidebar();
+          };
+          document.body.appendChild(sidebarScript);
+        } catch (err) {
+          console.error("Error loading sidebar:", err);
+        }
+
+        // Load footer dynamically
+        try {
+          const footerHTML = await fetch("scripts/footer.html").then((res) => res.text());
+          document.getElementById("footer-container").innerHTML = footerHTML;
+          document.getElementById("year").textContent = new Date().getFullYear();
+        } catch (err) {
+          console.error("Error loading footer:", err);
+        }
+      });
+    </script>
+  </body>
+</html>

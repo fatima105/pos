@@ -95,105 +95,130 @@
 
     <script src="scripts/scripts.js"></script>
     <script src="config.js"></script>
-    <script>
-        // Utility: Inline Alert
-        function showInlineAlert(message, type = "info") {
-            const alertPlaceholder = document.getElementById("alertPlaceholder");
-            if (!alertPlaceholder) return; // skip if not on this page
+<script>
+  // ✅ Utility: Inline Alert
+  function showInlineAlert(message, type = "info") {
+    const alertPlaceholder = document.getElementById("alertPlaceholder");
+    if (!alertPlaceholder) return; // Skip if no alert container found
 
-            const alertHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-      ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  `;
-            alertPlaceholder.innerHTML = alertHTML;
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
 
-            setTimeout(() => {
-                const alert = alertPlaceholder.querySelector(".alert");
-                if (alert) alert.classList.remove("show");
-            }, 5000);
-        }
+    alertPlaceholder.innerHTML = alertHTML;
 
-        // Load Footer
-        function loadFooter() {
-            const footerContainer = document.getElementById("footer-container");
-            if (!footerContainer) return;
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      const alert = alertPlaceholder.querySelector(".alert");
+      if (alert) alert.classList.remove("show");
+    }, 5000);
+  }
 
-            fetch("footer.html")
-                .then((res) => res.text())
-                .then((html) => {
-                    footerContainer.innerHTML = html;
-                    const yearEl = document.getElementById("year");
-                    if (yearEl) yearEl.textContent = new Date().getFullYear();
-                })
-                .catch((err) => console.error("Error loading footer:", err));
-        }
+  // ✅ Load Footer
+  async function loadFooter() {
+    const footerContainer = document.getElementById("footer-container");
+    if (!footerContainer) return;
 
-        // Load Sidebar
-        function loadSidebar() {
-            const sidebarContainer = document.getElementById("sidebar-container");
-            if (!sidebarContainer) return;
+    try {
+      const res = await fetch("footer.html");
+      if (!res.ok) throw new Error("Footer file not found");
+      const html = await res.text();
+      footerContainer.innerHTML = html;
 
-            fetch("sidebar.html")
-                .then((res) => res.text())
-                .then((html) => (sidebarContainer.innerHTML = html))
-                .catch((err) => console.error("Error loading sidebar:", err));
-        }
+      const yearEl = document.getElementById("year");
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
+    } catch (err) {
+      console.error("Error loading footer:", err);
+    }
+  }
 
-        // Form Submit Handler
-        document.addEventListener("DOMContentLoaded", () => {
-            const form = document.getElementById("userForm");
-            if (form) {
-                form.addEventListener("submit", async (e) => {
-                    e.preventDefault();
+  // ✅ Load Sidebar
+  async function loadSidebar() {
+    const sidebarContainer = document.getElementById("sidebar-container");
+    if (!sidebarContainer) return;
 
-                    const userData = {
-                        location_id: 1,
-                        name: form.name.value,
-                        email: form.email.value,
-                        role: form.role.value,
-                        password: form.password.value,
-                        status: form.status.value,
-                    };
+    try {
+      const res = await fetch("sidebar.html");
+      if (!res.ok) throw new Error("Sidebar file not found");
+      const html = await res.text();
+      sidebarContainer.innerHTML = html;
 
-                    try {
-                        const res = await fetch(`${BASEURL}users/users`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify(userData),
-                        });
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
+  }
 
-                        const data = await res.json();
-                        if (res.ok) {
-                            showInlineAlert("User created successfully!", "success");
-                            console.log("Response:", data);
-                        } else {
-                            showInlineAlert("Error: " + data.error, "danger");
-                        }
-                    } catch (err) {
-                        console.error("Error:", err);
-                        showInlineAlert("Something went wrong", "danger");
-                    }
-                });
-            }
+  // ✅ Form Submission Handler
+  async function handleUserFormSubmit() {
+    const form = document.getElementById("userForm");
+    if (!form) return;
 
-            // Call components
-            loadFooter();
-            loadSidebar();
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-            // Charts (safe check)
-            const visitorsChart = document.getElementById("visitorsChart");
-            if (visitorsChart) {
-                // init chart code here
-            }
+      const userData = {
+        location_id: 1,
+        name: form.name.value,
+        email: form.email.value,
+        role: form.role.value,
+        password: form.password.value,
+        status: form.status.value,
+      };
 
-            const salesChart = document.getElementById("salesChart");
-            if (salesChart) {
-                // init chart code here
-            }
+      console.log("Submitting user data:", userData);
+
+      try {
+        const res = await fetch(`${BASEURL}users/users`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
         });
-    </script>
+
+        console.log("Request sent, awaiting response...");
+        const data = await res.json();
+
+        if (res.ok) {
+          showInlineAlert("User created successfully!", "success");
+          console.log("Response:", data);
+        } else {
+          showInlineAlert("Error: " + (data.error || "Unknown error"), "danger");
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        showInlineAlert("Something went wrong", "danger");
+      }
+    });
+  }
+
+  // ✅ Initialize Everything Once DOM is Loaded
+  document.addEventListener("DOMContentLoaded", () => {
+    loadFooter();
+    loadSidebar();
+    handleUserFormSubmit();
+
+    // Optional: Initialize charts if present
+    const visitorsChart = document.getElementById("visitorsChart");
+    if (visitorsChart) {
+      // init visitors chart here
+    }
+
+    const salesChart = document.getElementById("salesChart");
+    if (salesChart) {
+      // init sales chart here
+    }
+  });
+</script>
+
 </body>
 
 </html>

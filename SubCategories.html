@@ -104,36 +104,58 @@
 <script src="scripts/buttons.html5.min.js"></script>
 <script src="scripts/buttons.print.min.js"></script>
   <!-- Sidebar Loader -->
-  <script>
-    fetch("sidebar.html")
-      .then((res) => res.text())
-      .then((html) => (document.getElementById("sidebar-container").innerHTML = html));
-  </script>
- <script src="config.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      loadSubCategories();
-    });
+<script>
+  document.addEventListener("DOMContentLoaded", async function () {
+    const sidebarContainer = document.getElementById("sidebar-container");
 
-    async function loadSubCategories() {
-      const apiUrl = `${BASEURL}SubCategory`;
+    // ✅ Load sidebar
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      sidebarContainer.innerHTML = sidebarHTML;
 
-      try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        const tbody = document.getElementById("subCategoryTableBody");
-        tbody.innerHTML = "";
+      // ✅ Load scripts AFTER sidebar HTML is injected
+      const script = document.createElement("script");
+      script.src = "scripts/scripts.js"; // should contain initSidebar()
+      script.onload = function () {
+        if (typeof initSidebar === "function") {
+          initSidebar(); // ✅ call only if function exists
+        }
+      };
+      document.body.appendChild(script);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
+  });
+</script>
 
-        if (data.SubCategory && data.SubCategory.length > 0) {
-          data.SubCategory.forEach((item, index) => {
-            const row = `
-              <tr>
-                <td>${index + 1}</td>
-                <td>${item.name}</td>
-                <td>${item.description}</td>
-                <td>${item.category_name}</td>
-                <td>
-                  ${item.status === 'Active'
+<script src="config.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    loadSubCategories();
+  });
+
+  async function loadSubCategories() {
+    const apiUrl = `${BASEURL}SubCategory`;
+
+    try {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      const tbody = document.getElementById("subCategoryTableBody");
+      tbody.innerHTML = "";
+
+      if (data.SubCategory && data.SubCategory.length > 0) {
+        data.SubCategory.forEach((item, index) => {
+          const row = `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${item.name}</td>
+              <td>${item.description}</td>
+              <td>${item.category_name}</td>
+              <td>
+                ${
+                  item.status === "Active"
                     ? `<span class="badge text-dark d-flex align-items-center">
                         <button class="btn btn-sm btn-success rounded-circle me-1">
                           <i class="fa-solid fa-check"></i>
@@ -142,39 +164,43 @@
                         <button class="btn btn-sm btn-danger rounded-circle me-1">
                           <i class="fa-solid fa-ban"></i>
                         </button>Block</span>`
-                  }
-                </td>
-                <td>
-                  <div class="d-flex gap-2">
-                    <a href="edit-subcategory.html?id=${item.id}" class="btn btn-sm">
-                      <i style="color:blue;" class="fas fa-edit"></i>
-                    </a>
-                  </div>
-                </td>
-              </tr>`;
-            tbody.innerHTML += row;
-          });
+                }
+              </td>
+              <td>
+                <div class="d-flex gap-2">
+                  <a href="edit-subcategory.html?id=${item.id}" class="btn btn-sm">
+                    <i style="color:blue;" class="fas fa-edit"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>`;
+          tbody.insertAdjacentHTML("beforeend", row);
+        });
 
-          $('#subCategoryTable').DataTable({
-            destroy: true, // ensures re-initialization is safe
-            dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
-            buttons: [
-              { extend: "copy", className: "btn btn-sm" },
-              { extend: "csv", className: "btn btn-sm" },
-              { extend: "excel", className: "btn btn-sm" },
-              { extend: "pdf", className: "btn btn-sm" },
-              { extend: "print", className: "btn btn-sm" },
-            ],
-              order: []  
-          });
-
-        } else {
-          tbody.innerHTML = `<tr><td colspan="6" class="text-center">No data found</td></tr>`;
+        // ✅ Initialize or reinitialize DataTable safely
+        if ($.fn.DataTable.isDataTable("#subCategoryTable")) {
+          $("#subCategoryTable").DataTable().destroy();
         }
-      } catch (error) {
-        console.error("Error fetching SubCategory data:", error);
+
+        $("#subCategoryTable").DataTable({
+          dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+          buttons: [
+            { extend: "copy", className: "btn btn-sm" },
+            { extend: "csv", className: "btn btn-sm" },
+            { extend: "excel", className: "btn btn-sm" },
+            { extend: "pdf", className: "btn btn-sm" },
+            { extend: "print", className: "btn btn-sm" },
+          ],
+          order: [],
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center">No data found</td></tr>`;
       }
+    } catch (error) {
+      console.error("Error fetching SubCategory data:", error);
     }
-  </script>
+  }
+</script>
+
 </body>
 </html>

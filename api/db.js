@@ -1,6 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require("bcryptjs");
 
 const dbPath = path.join(__dirname, 'alimart.db'); // Save in project root
 
@@ -393,9 +394,42 @@ db.run(`
     console.error('❌ Error creating users table:', err.message);
   } else {
     console.log('✅ users table created successfully.');
+
+    // Insert a default superadmin user if not exists
+    const insertSuperAdmin = `
+      INSERT OR IGNORE INTO users (location_id, name, email, role, password, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    const bcrypt = require('bcrypt');
+    const hashedPassword = bcrypt.hashSync('admin123', 10); // Replace with a secure password
+
+    db.run(
+      insertSuperAdmin,
+      [1, 'Super Admin', 'superadmin@gmail.com', 'superadmin', hashedPassword, 'active'],
+      (err) => {
+        if (err) {
+          console.error('❌ Error inserting superadmin:', err.message);
+        } else {
+          console.log('✅ Superadmin user inserted (if not already present).');
+        }
+      }
+    );
   }
 });
 
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS license (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL UNIQUE,
+    issue_date date,
+    expiry_date date
+  )
+`, (err) => {
+  if (err) console.error('❌ Error creating license table:', err.message);
+  else console.log('✅ license table created successfully.');
+});
 
 // Drop table if exists, then create it again
 

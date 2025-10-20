@@ -128,76 +128,82 @@
     <script src="config.js"></script>
   <script src="scripts/jquery-3.6.0.min.js"></script>
  <script src="scripts/bootstrap.bundle.min.js"></script>
-    <script src="scripts/scripts.js"></script>
+
     <script src="scripts/sweetalert.min.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        // Load Footer
-        fetch("scripts/footer.html")
-          .then((response) => response.text())
-          .then((data) => {
-            document.getElementById("footer-container").innerHTML = data;
-            document.getElementById("year").textContent =
-              new Date().getFullYear();
-          })
-          .catch((error) => console.error("Error loading footer:", error));
+<script>
+document.addEventListener("DOMContentLoaded", async function () {
+  // ✅ Load Footer
+  try {
+    const footerRes = await fetch("scripts/footer.html");
+    const footerHTML = await footerRes.text();
+    document.getElementById("footer-container").innerHTML = footerHTML;
+    document.getElementById("year").textContent = new Date().getFullYear();
+  } catch (error) {
+    console.error("Error loading footer:", error);
+  }
 
-        // Load Sidebar
-        fetch("sidebar.html")
-          .then((response) => response.text())
-          .then(
-            (html) =>
-              (document.getElementById("sidebar-container").innerHTML = html)
-          );
-      });
+  // ✅ Load Sidebar
+  try {
+    const sidebarResponse = await fetch("sidebar.html");
+    if (!sidebarResponse.ok) throw new Error("Sidebar failed to load");
+    const sidebarHTML = await sidebarResponse.text();
 
+    const sidebarContainer = document.getElementById("sidebar-container");
+    if (sidebarContainer) {
+      sidebarContainer.innerHTML = sidebarHTML;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    // This function extracts query parameters from the URL
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
-    const unitId = getQueryParam("id");
-    console.log("Unit ID:", unitId);
-
-    // ✅ Now safe to access DOM
-    document.getElementById("unitid").value = unitId;
-
-    if (unitId) {
-      const apiUrl = `${BASEURL}unit/${unitId}`;
-
-      fetch(apiUrl)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return res.json();
-        })
-        .then((data) => {
-          if (data && typeof data === "object") {
-            const { name, status } = data;
-
-            document.getElementById("name").value = name;
-            document.getElementById("status").value = status;
-
-            sendDataToAnotherApi(name, status);
-          } else {
-            throw new Error("Invalid data format");
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching unit data:", err);
-        });
+      // ✅ Load and initialize sidebar logic dynamically
+      const script = document.createElement("script");
+      script.src = "scripts/scripts.js"; // this file must contain initSidebar()
+      script.onload = function () {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(script);
     } else {
-      console.log("No unit ID found in the URL.");
+      console.error("❌ sidebar-container element not found in DOM");
     }
+  } catch (error) {
+    console.error("Error loading sidebar:", error);
+  }
 
-    // Update Unit
-    const UnitUpdate = document.getElementById("UnitUpdate");
+  // ✅ Now handle the rest of your page logic
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
 
-    UnitUpdate.addEventListener("submit", (e) => {
+  const unitId = getQueryParam("id");
+  console.log("Unit ID:", unitId);
+
+  const unitInput = document.getElementById("unitid");
+  if (unitInput) unitInput.value = unitId;
+
+  if (unitId) {
+    const apiUrl = `${BASEURL}unit/${unitId}`;
+    try {
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error("Network response was not ok");
+      const data = await res.json();
+
+      if (data && typeof data === "object") {
+        const { name, status } = data;
+        document.getElementById("name").value = name || "";
+        document.getElementById("status").value = status || "";
+        sendDataToAnotherApi(name, status);
+      } else {
+        throw new Error("Invalid data format");
+      }
+    } catch (err) {
+      console.error("Error fetching unit data:", err);
+    }
+  } else {
+    console.log("No unit ID found in the URL.");
+  }
+
+  // ✅ Update Unit
+  const UnitUpdate = document.getElementById("UnitUpdate");
+  if (UnitUpdate) {
+    UnitUpdate.addEventListener("submit", async (e) => {
       e.preventDefault();
       const unitid = document.getElementById("unitid").value;
       const name = document.getElementById("name").value.trim();
@@ -208,38 +214,36 @@
           document.getElementById("ErrorModal")
         );
         errorModal.show();
-      } else {
-        const apiUrl = `${BASEURL}Unit`;
+        return;
+      }
 
-        fetch(apiUrl, {
+      try {
+        const apiUrl = `${BASEURL}Unit`;
+        const res = await fetch(apiUrl, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, status, id: unitid }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.status == "true") {
-                                localStorage.setItem('globalAlertMessage',"Unit Data Updating");
-localStorage.setItem('globalAlertType', 'success');
-             
-              window.location.href = "units.html"; // redirect
-            } else {
-            
-                                  localStorage.setItem('globalAlertMessage',"Error updating unit");
-localStorage.setItem('globalAlertType', 'danger');
-            }
-          })
-          .catch((err) => {
-            console.error("Error:", err);
-                               localStorage.setItem('globalAlertMessage',"Failed to Update Unit");
-localStorage.setItem('globalAlertType', 'danger');
-          });
+        });
+        const data = await res.json();
+
+        if (data.status == "true") {
+          localStorage.setItem("globalAlertMessage", "Unit Data Updating");
+          localStorage.setItem("globalAlertType", "success");
+          window.location.href = "units.html";
+        } else {
+          localStorage.setItem("globalAlertMessage", "Error updating unit");
+          localStorage.setItem("globalAlertType", "danger");
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        localStorage.setItem("globalAlertMessage", "Failed to Update Unit");
+        localStorage.setItem("globalAlertType", "danger");
       }
     });
-  });
+  }
+});
 </script>
+
 </script>
     <script src="scripts/sweetalert.min.js"></script>
   </body>

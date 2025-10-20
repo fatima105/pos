@@ -2,6 +2,7 @@ const db = require('../db');
 
 // Assign module to user
 exports.assignModule = (req, res) => {
+  console.log("check");
   const { user_id, module_ids } = req.body;
 
   if (!user_id || !Array.isArray(module_ids) || module_ids.length === 0) {
@@ -45,7 +46,7 @@ exports.getUserModules = (req, res) => {
   const { userId } = req.params;
 
   const sql = `
-    SELECT m.id, m.name, m.description
+    SELECT m.id, m.name, m.link,m.description
     FROM module_assign_user am
     JOIN modules m ON am.module_id = m.id
     WHERE am.user_id = ?

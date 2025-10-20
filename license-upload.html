@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload License</title>
+  <link href="scripts/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .card {
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background-color: #ffffff;
+    }
+    #fileName {
+      font-style: italic;
+      font-size: 0.9rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h3 class="mb-4 text-center">Upload License</h3>
+
+    <div id="alertPlaceholder"></div>
+
+    <form id="licenseForm">
+      <div class="mb-3">
+        <label for="licenseFile" class="form-label">Select License File</label>
+        <input type="file" class="form-control" id="licenseFile" required>
+        <div id="fileName" class="mt-1">No file selected</div>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Upload License</button>
+    </form>
+  </div>
+
+<script src="config.js"></script>
+<script>
+  const licenseFileInput = document.getElementById('licenseFile');
+  const fileNameDisplay = document.getElementById('fileName');
+
+  // Show selected file name
+  licenseFileInput.addEventListener('change', () => {
+    if (licenseFileInput.files.length > 0) {
+      fileNameDisplay.textContent = licenseFileInput.files[0].name;
+    } else {
+      fileNameDisplay.textContent = "No file selected";
+    }
+  });
+
+  function showInlineAlert(message, type = 'info') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    alertPlaceholder.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+  }
+
+  document.getElementById('licenseForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const licenseFile = licenseFileInput.files[0];
+    if (!licenseFile) {
+      return showInlineAlert("Please select a license file.", "warning");
+    }
+
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      return showInlineAlert("User not found in session.", "danger");
+    }
+
+    // Dates
+    const issueDate = new Date().toISOString().split('T')[0];
+    const expiryDateObj = new Date();
+    expiryDateObj.setMonth(expiryDateObj.getMonth() + 1);
+    const expiryDate = expiryDateObj.toISOString().split('T')[0];
+
+    const formData = new FormData();
+    formData.append('licenseFile', licenseFile);
+    formData.append('user_id', userId);
+    formData.append('issue_date', issueDate);
+    formData.append('expiry_date', expiryDate);
+
+    try {
+      const response = await fetch(`${BASEURL}users/license`, {
+        method: "POST",
+        body: formData
+      });
+
+      const result = await response.json();
+      console.log("License Upload Response:", result);
+
+      if (result.success) {
+        showInlineAlert(result.message, "success");
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1000);
+      } else {
+        showInlineAlert(result.error || "Failed to upload license.", "danger");
+      }
+    } catch (error) {
+      console.error("License Upload Error:", error);
+      showInlineAlert("Something went wrong. Please try again later.", "warning");
+    }
+  });
+</script>
+
+</body>
+</html>

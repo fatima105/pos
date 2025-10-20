@@ -119,7 +119,7 @@
       .replace(/(\..*)\./g, '$1');    // Remove extra dots, allow only one
   });
 
-  $(document).ready(function () {
+  $(document).ready(async function () {
     // Load footer and sidebar
     fetch("scripts/footer.html")
       .then((res) => res.text())
@@ -128,12 +128,21 @@
         $("#year").text(new Date().getFullYear());
       });
 
-    fetch("sidebar.html")
-      .then((res) => res.text())
-      .then((data) => {
-        $("#sidebar-container").html(data);
-      });
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      $("#sidebar-container").html(sidebarHTML);
 
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
     const today = new Date().toISOString().split('T')[0];
     const dateInput = document.getElementById('date');
     dateInput.value = today;

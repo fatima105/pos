@@ -169,7 +169,7 @@
           exp.user_id || "",
           `
             <div class="d-flex gap-2">
-              <a href="specific-voucher.html?id=${exp.id}" class="btn btn-sm">
+            <a href="specific-voucher.html?id=${exp.id}" class="btn btn-sm">
                 <i class="fas fa-eye" style="color:blue;"></i>
               </a>
           
@@ -197,11 +197,24 @@
       });
 
     // Load Sidebar
-    fetch("sidebar.html")
-      .then(res => res.text())
-      .then(html => {
-        document.getElementById("sidebar-container").innerHTML = html;
-      });
+ try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      const sidebarContainer = document.getElementById("sidebar-container");
+      sidebarContainer.innerHTML = sidebarHTML;
+
+      // Load sidebar script AFTER sidebar is inserted
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js"; // Ensure initSidebar() exists there
+      sidebarScript.onload = function () {
+        if (typeof initSidebar === "function") {
+          initSidebar(); // Initialize sidebar (user info, links, etc.)
+        }
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
 
     // Initialize DataTable
     window.ExpenseTable = $("#ExpenseTable").DataTable({

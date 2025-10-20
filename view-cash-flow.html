@@ -222,11 +222,34 @@
   document.getElementById("toDate").setAttribute("max", today);
 
   // ✅ Load Sidebar
-  fetch("sidebar.html")
-    .then((response) => response.text())
-    .then((html) => {
-      document.getElementById("sidebar-container").innerHTML = html;
-    });
+  // ✅ Load sidebar first
+  const sidebarContainer = document.getElementById("sidebar-container");
+
+  async function loadSidebar() {
+    try {
+      const response = await fetch("sidebar.html");
+      const sidebarHTML = await response.text();
+      sidebarContainer.innerHTML = sidebarHTML;
+
+      // ✅ After sidebar is loaded, dynamically load the sidebar JS
+      const script = document.createElement("script");
+      script.src = "scripts/scripts.js"; // script that contains initSidebar()
+      script.onload = function () {
+        // Call sidebar initialization function AFTER it loads
+        if (typeof initSidebar === "function") {
+          initSidebar();
+        } else {
+          console.error("initSidebar() not found in scripts.js");
+        }
+      };
+      document.body.appendChild(script);
+    } catch (error) {
+      console.error("Error loading sidebar:", error);
+    }
+  }
+
+  // ✅ Run on page load
+  document.addEventListener("DOMContentLoaded", loadSidebar);
 
   $(document).ready(function () {
     $("#getReportBtn").on("click", function () {

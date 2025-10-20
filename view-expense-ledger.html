@@ -107,167 +107,172 @@
   <script src="scripts/buttons.print.min.js"></script>
   <script src="config.js"></script>
 
-  <script>
+<script>
   // Inline alert utility
-function showInlineAlert(message, type = 'info') {
-  const alertPlaceholder = document.getElementById('alertPlaceholder');
-  const alertHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-      ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-  `;
-  alertPlaceholder.innerHTML = alertHTML;
+  function showInlineAlert(message, type = 'info') {
+    const alertPlaceholder = document.getElementById('alertPlaceholder');
+    const alertHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    alertPlaceholder.innerHTML = alertHTML;
 
-  setTimeout(() => {
-    const alert = alertPlaceholder.querySelector('.alert');
-    if (alert) alert.classList.remove('show');
-  }, 5000);
-}
+    setTimeout(() => {
+      const alert = alertPlaceholder.querySelector('.alert');
+      if (alert) alert.classList.remove('show');
+    }, 5000);
+  }
 
-// Set max date to today
-const today = new Date().toISOString().split("T")[0];
-document.getElementById("fromDate").setAttribute("max", today);
-document.getElementById("toDate").setAttribute("max", today);
+  // Set max date to today
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("fromDate").setAttribute("max", today);
+  document.getElementById("toDate").setAttribute("max", today);
 
-// Load Sidebar dynamically
-fetch("sidebar.html")
-  .then(response => response.text())
-  .then(html => {
-    document.getElementById("sidebar-container").innerHTML = html;
-  });
+  $(document).ready(async () => {
+    // ✅ Load Sidebar dynamically
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
 
-$(document).ready(function () {
-  $("#getReportBtn").on("click", function () {
-    const startDate = $("#fromDate").val();
-    const endDate = $("#toDate").val();
+      // ✅ Correct jQuery usage
+      $("#sidebar-container").html(sidebarHTML);
 
-    if (!startDate || !endDate) {
-      showInlineAlert("Please select both start and end dates.", "warning");
-      return;
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
     }
-
-    // Clear old table
-    $("#ExpenseLedger").html("");
-
-    fetch(`${BASEURL}Reports/Expense`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        start_date: startDate,
-        end_date: endDate,
-      }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (!data || !data.data || data.data.length === 0) {
-          showInlineAlert("No data found for the selected period.", "info");
-          return;
-        }
-
-        let html = "";
-        data.data.forEach((head, i) => {
-          html += generateTable(
-            head.ledgerRows,
-            head.opening_balance,
-            head.closing_balance,
-            i
-          );
-        });
-
-        $("#ExpenseLedger").html(html);
-
-        // Initialize DataTables for each generated table
-        data.data.forEach((_, i) => {
-          $(`#reportTable_${i}`).DataTable({
-            dom: "Bfrtip",
-       
-            order: [], // disable default ordering
-            // Handle colspan rows properly
-            createdRow: function(row, data, dataIndex) {
-              // This ensures DataTable handles special rows correctly
-              if ($(row).find('td[colspan]').length > 0) {
-                $(row).addClass('special-row');
-              }
-            }
-          });
-        });
-      })
-      .catch(err => {
-        console.error("Error fetching expense ledger:", err);
-        showInlineAlert("Failed to load Expense Ledger. Please try again.", "danger");
-      });
   });
-});
 
-// Generate ledger table HTML
-function generateTable(entries, openingBalance, closingBalance, index) {
-  let balance = parseFloat(openingBalance) || 0;
-  let rows = "";
+  $(document).ready(function () {
+    $("#getReportBtn").on("click", function () {
+      const startDate = $("#fromDate").val();
+      const endDate = $("#toDate").val();
 
-  // Opening balance row - Fixed colspan structure
-  rows += `
-    <tr class="opening-balance-row">
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td class="text-end fw-bold">Opening Balance:</td>
-      <td class="fw-bold">${balance.toFixed(2)}</td>
-    </tr>
-  `;
+      if (!startDate || !endDate) {
+        showInlineAlert("Please select both start and end dates.", "warning");
+        return;
+      }
 
-  // Ledger rows
-  entries.forEach((entry, idx) => {
-    const dr = parseFloat(entry.debit) || 0;
-    const cr = parseFloat(entry.credit) || 0;
-    balance += cr - dr;
+      // Clear old table
+      $("#ExpenseLedger").html("");
+
+      fetch(`${BASEURL}Reports/Expense`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_date: startDate,
+          end_date: endDate,
+        }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (!data || !data.data || data.data.length === 0) {
+            showInlineAlert("No data found for the selected period.", "info");
+            return;
+          }
+
+          let html = "";
+          data.data.forEach((head, i) => {
+            html += generateTable(
+              head.ledgerRows,
+              head.opening_balance,
+              head.closing_balance,
+              i
+            );
+          });
+
+          $("#ExpenseLedger").html(html);
+
+          // Initialize DataTables
+          data.data.forEach((_, i) => {
+            $(`#reportTable_${i}`).DataTable({
+              dom: "Bfrtip",
+              order: [],
+              createdRow: function (row, data, dataIndex) {
+                if ($(row).find('td[colspan]').length > 0) {
+                  $(row).addClass('special-row');
+                }
+              },
+            });
+          });
+        })
+        .catch(err => {
+          console.error("Error fetching expense ledger:", err);
+          showInlineAlert("Failed to load Expense Ledger. Please try again.", "danger");
+        });
+    });
+  });
+
+  // Generate ledger table HTML
+  function generateTable(entries, openingBalance, closingBalance, index) {
+    let balance = parseFloat(openingBalance) || 0;
+    let rows = "";
 
     rows += `
-      <tr>
-        <td>${idx + 1}</td>
-        <td>${entry.date || ""}</td>
-        <td>${entry.narration || ""}</td>
-        <td>${dr.toFixed(2)}</td>
-        <td>${cr.toFixed(2)}</td>
-        <td>${balance.toFixed(2)}</td>
+      <tr class="opening-balance-row">
+        <td></td><td></td><td></td><td></td>
+        <td class="text-end fw-bold">Opening Balance:</td>
+        <td class="fw-bold">${balance.toFixed(2)}</td>
       </tr>
     `;
-  });
 
-  // Closing balance - Fixed colspan structure
-  const finalClosing =
-    Number.isFinite(parseFloat(closingBalance)) && closingBalance !== null && closingBalance !== ""
-      ? parseFloat(closingBalance)
-      : balance;
+    entries.forEach((entry, idx) => {
+      const dr = parseFloat(entry.debit) || 0;
+      const cr = parseFloat(entry.credit) || 0;
+      balance += cr - dr;
 
-  rows += `
-    <tr class="closing-balance-row">
-      <td></td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td class="text-end fw-bold">Closing Balance:</td>
-      <td class="fw-bold">${finalClosing.toFixed(2)}</td>
-    </tr>
-  `;
-
-  return `
-    <table id="reportTable_${index}" class="table table-bordered table-striped mt-4">
-      <thead class="table-dark">
+      rows += `
         <tr>
-          <th>Sr.</th>
-          <th>Date</th>
-          <th>Narration</th>
-          <th>Dr.</th>
-          <th>Cr.</th>
-          <th>Balance</th>
+          <td>${idx + 1}</td>
+          <td>${entry.date || ""}</td>
+          <td>${entry.narration || ""}</td>
+          <td>${dr.toFixed(2)}</td>
+          <td>${cr.toFixed(2)}</td>
+          <td>${balance.toFixed(2)}</td>
         </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
-}
-  </script>
+      `;
+    });
+
+    const finalClosing =
+      Number.isFinite(parseFloat(closingBalance)) &&
+      closingBalance !== null &&
+      closingBalance !== ""
+        ? parseFloat(closingBalance)
+        : balance;
+
+    rows += `
+      <tr class="closing-balance-row">
+        <td></td><td></td><td></td><td></td>
+        <td class="text-end fw-bold">Closing Balance:</td>
+        <td class="fw-bold">${finalClosing.toFixed(2)}</td>
+      </tr>
+    `;
+
+    return `
+      <table id="reportTable_${index}" class="table table-bordered table-striped mt-4">
+        <thead class="table-dark">
+          <tr>
+            <th>Sr.</th>
+            <th>Date</th>
+            <th>Narration</th>
+            <th>Dr.</th>
+            <th>Cr.</th>
+            <th>Balance</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+</script>
+
 </body>
 </html>

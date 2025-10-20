@@ -134,6 +134,23 @@
     <script src="scripts/select2.min.js"></script>
 
 <script>
+    // ✅ Load Sidebar
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const sidebarResponse = await fetch("sidebar.html");
+    const sidebarHTML = await sidebarResponse.text();
+    document.getElementById("sidebar-container").innerHTML = sidebarHTML;
+
+    // Load sidebar script dynamically
+    const sidebarScript = document.createElement("script");
+    sidebarScript.src = "scripts/scripts.js";
+    sidebarScript.onload = () => {
+      if (typeof initSidebar === "function") initSidebar();
+    };
+    document.body.appendChild(sidebarScript);
+  } catch (err) {
+    console.error("Error loading sidebar:", err);
+  }
   // Load footer
   fetch("scripts/footer.html")
     .then(response => response.text())
@@ -403,6 +420,8 @@
       </div>
     `;
   }
+
+})
 </script>
 
   </body>

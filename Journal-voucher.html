@@ -123,137 +123,141 @@
     <script src="scripts/buttons.print.min.js"></script>
     <script src="config.js"></script>
 
-    <script>
-       let selectedId = null;
+<script>
+let selectedId = null;
 
-  // When trash icon is clicked
-  $(document).on('click', '.open-delete-modal', function () {
-    selectedId = $(this).data('id'); // Get ID from button
-    $('#deleteModal').modal('show'); // Show modal
-  });
+// When trash icon is clicked
+$(document).on('click', '.open-delete-modal', function () {
+  selectedId = $(this).data('id');
+  $('#deleteModal').modal('show');
+});
 
-  // Confirm delete
-  $('#confirmDeleteBtn').on('click', function () {
-    if (!selectedId) return;
+// Confirm delete
+$('#confirmDeleteBtn').on('click', function () {
+  if (!selectedId) return;
 
-    fetch(`${BASEURL}CashJournalVoucher/${selectedId}`, {
-      method: 'DELETE',
+  fetch(`${BASEURL}CashJournalVoucher/${selectedId}`, { method: 'DELETE' })
+    .then(res => res.json())
+    .then(data => {
+      console.log(data);
+      $('#deleteModal').modal('hide');
+      showInlineAlert('Deleted successfully');
+      location.reload();
     })
-      .then(res => res.json())
-      .then(data => {
-        console.log(data);
-        $('#deleteModal').modal('hide');
-        showInlineAlert('Deleted successfully');
-        // Optionally refresh or remove row from table
-        location.reload(); // or dynamically remove the row
-      })
-      .catch(err => {
-        console.error(err);
-       showInlineAlert('Failed to delete');
-      });
-  });
-      function showInlineAlert(message, type = 'info') {
-        const alertPlaceholder = document.getElementById('alertPlaceholder');
-        const alertHTML = `
-          <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    .catch(err => {
+      console.error(err);
+      showInlineAlert('Failed to delete', 'danger');
+    });
+});
+
+function showInlineAlert(message, type = 'info') {
+  const alertPlaceholder = document.getElementById('alertPlaceholder');
+  const alertHTML = `
+    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  `;
+  alertPlaceholder.innerHTML = alertHTML;
+  setTimeout(() => {
+    const alert = alertPlaceholder.querySelector('.alert');
+    if (alert) alert.classList.remove('show');
+  }, 5000);
+}
+
+async function loadjournalpaymentData() {
+  const url = `${BASEURL}CashJournalVoucher`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const result = await response.json();
+    console.log("API Response:", result);
+
+    window.journalpayment.clear();
+
+    const journalpaymentArray = Array.isArray(result.data) ? result.data : [];
+
+    journalpaymentArray.forEach(cp => {
+      window.journalpayment.row.add([
+        cp.code || "",
+        cp.date ? new Date(cp.date).toLocaleDateString() : "",
+        cp.narration,
+        cp.credit,
+        cp.user_id || "",
+        `
+          <div class="d-flex gap-2">
+            <a href="specific-voucher-cash-journal.html?id=${cp.id}" class="btn btn-sm">
+              <i class="fas fa-eye" style="color:blue;"></i>
+            </a>
+            <button class="btn btn-sm open-delete-modal" data-id="${cp.id}">
+              <i class="fas fa-trash" style="color:red;"></i>
+            </button>
           </div>
-        `;
-        alertPlaceholder.innerHTML = alertHTML;
+        `
+      ]);
+    });
 
-        setTimeout(() => {
-          const alert = alertPlaceholder.querySelector('.alert');
-          if (alert) alert.classList.remove('show');
-        }, 5000);
-      }
+    window.journalpayment.draw();
 
-      async function loadjournalpaymentData() {
-        const url = `${BASEURL}CashJournalVoucher`;
+  } catch (error) {
+    console.error("Error fetching journalpayment:", error);
+    showInlineAlert("Failed to load Cash Journal Payment data.", "danger");
+  }
+}
 
-        try {
-          const response = await fetch(url, {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-          });
+document.addEventListener("DOMContentLoaded", function () {
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
+  // ✅ Load Sidebar inside async IIFE
+  (async () => {
+    try {
+      const sidebarResponse = await fetch("sidebar.html");
+      const sidebarHTML = await sidebarResponse.text();
+      $("#sidebar-container").html(sidebarHTML);
 
-          const result = await response.json();
-          console.log("API Response:", result);
+      // Load sidebar script dynamically
+      const sidebarScript = document.createElement("script");
+      sidebarScript.src = "scripts/scripts.js";
+      sidebarScript.onload = () => {
+        if (typeof initSidebar === "function") initSidebar();
+      };
+      document.body.appendChild(sidebarScript);
+    } catch (err) {
+      console.error("Error loading sidebar:", err);
+    }
+  })();
 
-          window.journalpayment.clear();
+  // ✅ Load Footer
+  fetch("scripts/footer.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("footer-container").innerHTML = html;
+      const yearEl = document.getElementById("year");
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
+    });
 
-          const journalpaymentArray = Array.isArray(result.data) ? result.data : [];
+  // ✅ Initialize DataTable
+  window.journalpayment = $("#journalpayment").DataTable({
+    dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
+    buttons: [
+      { extend: "copy", className: "btn btn-sm" },
+      { extend: "csv", className: "btn btn-sm" },
+      { extend: "excel", className: "btn btn-sm" },
+      { extend: "pdf", className: "btn btn-sm" },
+      { extend: "print", className: "btn btn-sm" },
+    ],
+    order: []
+  });
 
-          journalpaymentArray.forEach(cp => {
-            window.journalpayment.row.add([
-              cp.code || "",
-              cp.date ? new Date(cp.date).toLocaleDateString() : "",
-              cp.narration,
-              cp.credit,
-          
-              cp.user_id || "",
-              `
-                <div class="d-flex gap-2">
-                  <a href="specific-voucher-cash-journal.html?id=${cp.id}" class="btn btn-sm">
-                    <i class="fas fa-eye" style="color:blue;"></i>
-                  </a>
-          <!-- Button to open modal -->
-<button class="btn btn-sm open-delete-modal" data-id="${cp.id}">
-  <i class="fas fa-trash" style="color:red;"></i>
-</button>
+  // ✅ Load data
+  loadjournalpaymentData();
+});
+</script>
 
-                  </a>
-                </div>
-              `
-            ]);
-          });
-
-          window.journalpayment.draw();
-
-        } catch (error) {
-          console.error("Error fetching journalpayment:", error);
-          showInlineAlert("Failed to load Cash Journal Payment data.", "danger");
-        }
-      }
-
-      document.addEventListener("DOMContentLoaded", async function () {
-        // Load Footer
-        fetch("scripts/footer.html")
-          .then(res => res.text())
-          .then(html => {
-            document.getElementById("footer-container").innerHTML = html;
-            const yearEl = document.getElementById("year");
-            if (yearEl) yearEl.textContent = new Date().getFullYear();
-          });
-
-        // Load Sidebar
-        fetch("sidebar.html")
-          .then(res => res.text())
-          .then(html => {
-            document.getElementById("sidebar-container").innerHTML = html;
-          });
-
-        // Initialize DataTable
-        window.journalpayment = $("#journalpayment").DataTable({
-          dom: '<"d-flex justify-content-between align-items-center"<"bg-buttons"B>f>rtip',
-          buttons: [
-            { extend: "copy", className: "btn btn-sm" },
-            { extend: "csv", className: "btn btn-sm" },
-            { extend: "excel", className: "btn btn-sm" },
-            { extend: "pdf", className: "btn btn-sm" },
-            { extend: "print", className: "btn btn-sm" },
-          ],
-            order: []  
-        });
-
-
-        // Load Data
-        await loadjournalpaymentData();
-      });
-    </script>
   </body>
 </html>
