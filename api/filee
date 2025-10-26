@@ -11,7 +11,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 // List of tables to KEEP
-const keepTables = ["chart_of_accounts","Product","Category", "Product","customer","SubCategory", "Unit", "Supplier"];
+const keepTables = ["module_assign_user","modules","users"];
 
 // Drop all other tables
 db.serialize(() => {

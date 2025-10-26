@@ -42,28 +42,35 @@ const db = new sqlite3.Database(dbPath, (err) => {
 db.serialize(() => {
 
     // Create Unit table
-    db.run(
-        `CREATE TABLE IF NOT EXISTS Unit (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(255) NOT NULL,
-            status TEXT NOT NULL
-        )`,
-        (err) => {
-            if (err) {
-                console.error('❌ Error creating Unit table:', err.message);
-            } else {
-                console.log('✅ Unit table created successfully.');
-            }
+db.run(
+    `CREATE TABLE IF NOT EXISTS Unit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(255) NOT NULL,
+        status TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        deleted_at TEXT NULL
+    )`,
+    (err) => {
+        if (err) {
+            console.error('❌ Error creating Unit table:', err.message);
+        } else {
+            console.log('✅ Unit table created successfully.');
         }
-    );
+    }
+);
+
     // Create Category table
     db.run(
-        `CREATE TABLE IF NOT EXISTS Category (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name VARCHAR(255) NOT NULL,
-            description TEXT,
-            status TEXT NOT NULL
-        )`,
+        `  CREATE TABLE IF NOT EXISTS Category (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL,
+    created_at TEXT,
+    updated_at TEXT,
+    deleted_at TEXT
+  )`,
         (err) => {
             if (err) {
                 console.error('❌ Error creating Category table:', err.message);
@@ -106,23 +113,27 @@ db.serialize(() => {
         }
     );
     // Create SubCategory table
-    db.run(
-        `CREATE TABLE IF NOT EXISTS SubCategory (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category_id INTEGER,
-            name VARCHAR(255) NOT NULL,
-            description TEXT,
-            status TEXT NOT NULL,
-            FOREIGN KEY (category_id) REFERENCES Category(id)
-        )`,
-        (err) => {
-            if (err) {
-                console.error('❌ Error creating SubCategory table:', err.message);
-            } else {
-                console.log('✅ SubCategory table created successfully.');
-            }
-        }
-    );
+db.run(
+  `CREATE TABLE IF NOT EXISTS SubCategory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_id INTEGER,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL,
+    created_at TEXT,
+    updated_at TEXT,
+    deleted_at TEXT,
+    FOREIGN KEY (category_id) REFERENCES Category(id)
+  )`,
+  (err) => {
+    if (err) {
+      console.error('❌ Error creating SubCategory table:', err.message);
+    } else {
+      console.log('✅ SubCategory table created successfully.');
+    }
+  }
+);
+
 // Create Product table
 db.run("ALTER TABLE Product ADD COLUMN unit_id INTEGER", (err) => {
   if (err) {
@@ -546,37 +557,39 @@ db.run(`CREATE TABLE IF NOT EXISTS purchase_return_details (
   }
 );
 //expense & expense_detail
-db.run(`CREATE TABLE expenses (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  location_id INTEGER,
-  voucher_no TEXT,
-  date TEXT,
-  paid_from TEXT,
-  user_id INTEGER,
-  deleted_at TEXT,
-  updated_at TEXT,
-  soft_delete INTEGER,
-  created_at TEXT
-)`,
+db.run(`
+  CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    location_id INTEGER,
+    voucher_no TEXT,
+    date TEXT,
+    paid_from TEXT,
+    user_id INTEGER,
+    deleted_at TEXT,
+    created_at TEXT,
+    updated_at TEXT,
+    soft_delete INTEGER DEFAULT 0
+  )
+`,
+(err) => {
+  if (err) {
+    console.error('❌ Error creating expenses table:', err.message);
+  } else {
+    console.log('✅ expenses table created successfully.');
+  }
+});
 
-    (err) => {
-      if (err) {
-        console.error('❌ Error creating expenses table:', err.message);
-      } else {
-        console.log('✅ expenses table created successfully.');
-      }
-    });
 
-db.run(`CREATE TABLE expense_details (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  expense_id INTEGER,
-  location_id INTEGER,
- remarks INTEGER,
-  amount INTEGER
-  deleted_at TEXT,
-  updated_at TEXT,
-  soft_delete INTEGER,
-  created_at TEXT
+db.run(`CREATE TABLE IF NOT EXISTS expense_details (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_id INTEGER,
+    location_id INTEGER,
+    remarks TEXT,
+    amount INTEGER,
+    deleted_at TEXT,
+    created_at TEXT,
+    updated_at TEXT,
+    soft_delete INTEGER
 )`,
     (err) => {
       if (err) {
@@ -822,14 +835,13 @@ db.run(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_id INTEGER,
     location_id INTEGER,
-    invoice_no INTEGER,
-    sale_date INTEGER, 
-    amount INTEGER,
-    discount INTEGER,
-   payment_status INTEGER,
-    user_id TEXT,
-   fbr_invoice INTEGER,
-
+    invoice_no TEXT,
+    sale_date TEXT, 
+    amount REAL,
+    discount REAL,
+    payment_status INTEGER,
+    user_id INTEGER,
+    fbr_invoice TEXT,
     deleted_at TEXT,
     created_at TEXT,
     updated_at TEXT,
